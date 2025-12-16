@@ -3,12 +3,14 @@ import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
     const session = await auth();
+    console.log("Dashboard Session Check:", JSON.stringify(session, null, 2));
 
     if (!session?.user) {
         redirect("/login");
     }
 
     const role = session.user.role;
+    console.log("Redirecting based on role:", role);
 
     if (role === 'STUDENT') redirect("/dashboard/semester");
     if (role === 'TEACHER') redirect("/teacher/courses");

@@ -26,7 +26,7 @@ export function ConfirmationModal({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
                 <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50/50">
                     <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -60,8 +60,8 @@ export function ConfirmationModal({
                             onClose();
                         }}
                         className={`px-4 py-2 text-sm font-medium text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${isDanger
-                                ? "bg-red-600 hover:bg-red-700 focus:ring-red-500"
-                                : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
+                            ? "bg-red-600 hover:bg-red-700 focus:ring-red-500"
+                            : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
                             }`}
                     >
                         {confirmText}

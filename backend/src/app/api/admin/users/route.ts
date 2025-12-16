@@ -101,7 +101,8 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
     try {
         const body = await req.json();
-        const { id, isBanned, banDuration, role, name, email, departmentId, isTopDepartmentAdmin } = body;
+        const { id, isBanned, banDuration, role, name, email, departmentId, isTopDepartmentAdmin, password } = body;
+        // banDuration in days. If -1, permanent.
         // banDuration in days. If -1, permanent.
 
         if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
@@ -117,6 +118,13 @@ export async function PUT(req: Request) {
         if (email) {
             updates.push("email = ?");
             params.push(email);
+        }
+
+        if (password) {
+            const bcrypt = await import("bcryptjs");
+            const hashedPassword = await bcrypt.hash(password, 10);
+            updates.push("password = ?");
+            params.push(hashedPassword);
         }
 
         // Allow explicitly setting departmentId to null if needed, or changing it
@@ -171,6 +179,10 @@ export async function PUT(req: Request) {
 
         if (role) {
             await logAudit('USER_UPDATED', actorId, `Updated role for user ${id} to ${role}`, id);
+        }
+
+        if (password) {
+            await logAudit('USER_UPDATED', actorId, `Updated password for user ${id}`, id);
         }
 
         if (isTopDepartmentAdmin !== undefined) {

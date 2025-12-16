@@ -86,10 +86,16 @@ export async function initDatabase() {
         departmentId VARCHAR(191) NOT NULL,
         year INT,
         section VARCHAR(50),
+        startMonth VARCHAR(50),
+        currentSemester VARCHAR(50),
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (departmentId) REFERENCES Department(id) ON DELETE CASCADE
       )
     `);
+
+    // Ensure columns exist (Migration)
+    try { await db.query("ALTER TABLE Batch ADD COLUMN startMonth VARCHAR(50)"); console.log("✅ Added startMonth to Batch"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding startMonth:", e); }
+    try { await db.query("ALTER TABLE Batch ADD COLUMN currentSemester VARCHAR(50)"); console.log("✅ Added currentSemester to Batch"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding currentSemester:", e); }
 
     // --- Users & Roles ---
     await db.query(`
@@ -161,17 +167,63 @@ export async function initDatabase() {
 
     // --- Academics ---
     await db.query(`
+      CREATE TABLE IF NOT EXISTS Semester (
+        id VARCHAR(191) PRIMARY KEY,
+        name VARCHAR(50) NOT NULL,
+        departmentId VARCHAR(191) NOT NULL,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (departmentId) REFERENCES Department(id) ON DELETE CASCADE
+      )
+    `);
+
+    await db.query(`
       CREATE TABLE IF NOT EXISTS Course (
         id VARCHAR(191) PRIMARY KEY,
         name VARCHAR(191) NOT NULL,
         code VARCHAR(191),
-        semester VARCHAR(191),
+        semesterId VARCHAR(191),
         departmentId VARCHAR(191),
         teacherId VARCHAR(191),
+        FOREIGN KEY (semesterId) REFERENCES Semester(id) ON DELETE CASCADE,
         FOREIGN KEY (departmentId) REFERENCES Department(id) ON DELETE CASCADE,
         FOREIGN KEY (teacherId) REFERENCES User(id) ON DELETE SET NULL
       )
     `);
+
+    // Migration: Add semesterId column if it doesn't exist
+    try {
+      await db.query("ALTER TABLE Course ADD COLUMN semesterId VARCHAR(191)");
+      console.log("✅ Added semesterId to Course");
+    } catch (e: any) {
+      if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding semesterId:", e);
+    }
+
+    // Migration: Add FK constraint if not exists
+    try {
+      await db.query(`
+        ALTER TABLE Course 
+        ADD CONSTRAINT fk_course_semester 
+        FOREIGN KEY (semesterId) REFERENCES Semester(id) ON DELETE CASCADE
+      `);
+      console.log("✅ Added FK constraint for semesterId");
+    } catch (e: any) {
+      if (e.code !== 'ER_DUP_KEYNAME') console.error("Error adding FK:", e);
+    }
+
+    // Seed default semesters for existing departments
+    const [departments] = await db.query<any[]>('SELECT id FROM Department');
+    for (const dept of departments) {
+      const semesters = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
+      for (const sem of semesters) {
+        const semId = `sem-${dept.id}-${sem}`;
+        await db.query(
+          'INSERT IGNORE INTO Semester (id, name, departmentId) VALUES (?, ?, ?)',
+          [semId, sem, dept.id]
+        );
+      }
+    }
+    console.log("✅ Default semesters seeded");
+
 
     await db.query(`
       CREATE TABLE IF NOT EXISTS Routine (

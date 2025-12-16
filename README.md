@@ -1,52 +1,109 @@
-# EduNexus Academic Portal
+# EduNexus - Department Management System
 
-Welcome to **EduNexus**, a comprehensive Department Hub and Academic Portal designed for universities. This system facilitates interaction between Students, Teachers, and Administrators through a unified platform.
+EduNexus is a comprehensive web-based platform designed to streamline department management in educational institutions. It facilitates seamless interaction between Students, Faculty, Department Admins, and Super Admins.
+
+## 🚀 Features
+
+### 🔐 Authentication & Security
+- **Role-Based Access Control (RBAC)**: Distinct panels for Student, Teacher, Dept Admin, Super Admin.
+- **Secure Login**: JWT-based authentication with `bcryptjs` password hashing.
+- **Frontend Protection**: Protected routes using `next-auth`.
+
+### 🎓 Student & Academic Management
+- **Batches & Sections**: Organize students into batches (Year, Semester, Section).
+- **Class Representatives (CR)**: Assign/Revoke CR roles (Max 4 per batch).
+- **Routine Management**: View class schedules and exam routines.
+- **Notices**: Pin important announcements with priority levels (Low, Medium, High).
+
+### 👩‍🏫 Faculty Management
+- **Teacher Profiles**: Manage faculty details, designations, and contact info.
+- **Course Assignment**: Assign specific courses and semesters to teachers.
+
+### 🛠️ Admin Dashboard
+- **User Management**: Create/Edit/Ban users (Students, Teachers, Admins).
+- **Dept Admin Controls**: Manage batches, courses, and department-specific settings.
+- **Super Admin**: Oversee multiple departments and top-level configurations.
+- **Rate Limiting**: 5-second cooldown on critical creation actions (Notices, Batches, Admins) to prevent spam.
+
+### 🎨 Modern UI/UX
+- **Responsive Design**: Built with Tailwind CSS for mobile-first responsiveness.
+- **Interactive Components**: 
+    - `react-hot-toast` for real-time notifications.
+    - Custom `ConfirmationModal` for critical actions (Deletions, Bans).
+    - Glassmorphism effects and smooth transitions.
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **State/Notifications**: React Hooks, React Hot Toast
+- **Auth**: NextAuth.js
+
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express.js (Custom Server Entry)
+- **Database**: MySQL (using `mysql2` driver with Raw SQL)
+- **Password Has**: bcryptjs
+- **Validation**: Zod (Frontend & Backend)
 
 ## 📂 Project Structure
 
-The project is organized as a monorepo with two main applications:
+```
+EduNexus/
+├── Frontend/           # Next.js Application
+│   ├── src/app/        # App Router Pages
+│   └── src/components/ # Reusable UI Components
+├── Backend/            # Express.js Server
+│   ├── src/app/api/    # API Routes
+│   ├── src/lib/        # DB Connection & Init
+│   └── server.ts       # Entry Point
+└── README.md           # Project Documentation
+```
 
-- **`frontend/`**: The User Interface service built with Next.js (App Router) and Tailwind CSS.
-- **`backend/`**: The API, Authentication, and Database service built with Next.js (API Routes), Prisma, and MySQL.
-
-## 🚀 Getting Started
+## ⚡ Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- MySQL Database
+- Node.js (v18+)
+- MySQL Server
 
-### 1. Setup Backend
-The backend handles the data connection.
+### Installation
 
-```bash
-cd backend
-npm install
-# Configure .env:
-# DATABASE_URL="mysql://..."
-# AUTH_SECRET="supersecret" (Must match Frontend)
-# Initialize Database
-npx prisma db push
-# Seed Initial Data (Admin/Student)
-npx tsx prisma/seed.ts
-# Start Server (Port 3001)
-npm run dev
-```
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/your-repo/EduNexus.git
+    cd EduNexus
+    ```
 
-### 2. Setup Frontend
-The frontend consumes the Backend API.
+2.  **Setup the Backend**
+    ```bash
+    cd Backend
+    npm install
+    # Configure .env file with DB_USER, DB_PASSWORD, DB_NAME
+    npm run dev
+    ```
+    *The backend will automatically initialize the database and tables on first run.*
 
-```bash
-cd frontend
-npm install
-# Start Server (Port 3000)
-npm run dev
-```
+3.  **Setup the Frontend**
+    ```bash
+    cd ../Frontend
+    npm install
+    # Configure .env.local with NEXTAUTH_SECRET and Backend URL
+    npm run dev
+    ```
 
+4.  **Access the App**
+    - Frontend: `http://localhost:3000`
+    - Backend API: `http://localhost:4000` (or configured port)
 
+## 🛡️ Admin Credentials (Default Seeding)
+*Check `backend/src/lib/seed.ts` (if available) or logs for initial admin credentials.*
 
-## 🛠 Tech Stack
-- **Framework**: Next.js 15
-- **Language**: TypeScript
-- **Database**: MySQL + Prisma ORM
-- **Auth**: NextAuth.js
-- **Styling**: Tailwind CSS
+## 🤝 Contributing
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request

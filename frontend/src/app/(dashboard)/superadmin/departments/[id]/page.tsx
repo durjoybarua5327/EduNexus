@@ -172,9 +172,17 @@ export default function DepartmentDetailsPage({ params }: { params: Promise<{ id
 
     async function toggleBan(userId: string, isBanned: boolean) {
         if (isBanned) {
-            if (!confirm("Unban this user?")) return;
-            await updateUser(userId, { isBanned: false });
-            toast.success("User unbanned");
+            setConfirmModal({
+                isOpen: true,
+                title: "Unban User",
+                message: "Are you sure you want to unban this user?",
+                isDanger: false,
+                onConfirm: async () => {
+                    await updateUser(userId, { isBanned: false });
+                    toast.success("User unbanned");
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
+            });
         } else {
             setBanData({ id: userId, duration: 7 });
             setIsBanModalOpen(true);

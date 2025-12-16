@@ -26,13 +26,18 @@ export function DashboardShell({ children, user }: { children: React.ReactNode, 
                     { name: "Notices", href: "/teacher/notices" },
                 ];
             case "DEPT_ADMIN":
-                return [
-                    { name: "Overview", href: "/admin/overview" },
-                    { name: "Faculty", href: "/admin/faculty" },
+                const deptLinks = [
+                    { name: "Dashboard", href: "/admin/overview" },
                     { name: "Batches", href: "/admin/batches" },
+                    { name: "Teachers", href: "/admin/faculty" },
+                    { name: "Courses", href: "/admin/courses" },
                     { name: "Academics", href: "/admin/academics" },
-                    { name: "Notices", href: "/admin/notices" },
                 ];
+                // @ts-ignore
+                if (user?.isTopDepartmentAdmin) {
+                    deptLinks.push({ name: "Admin", href: "/admin/admins" });
+                }
+                return deptLinks;
             case "SUPER_ADMIN":
                 return [
                     { name: "Dashboard", href: "/superadmin" },

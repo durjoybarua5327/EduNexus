@@ -44,7 +44,8 @@ export function Sidebar({ isOpen, role }: SidebarProps) {
                     { name: "Overview", href: "/admin/overview", icon: LayoutDashboard },
                     { name: "Faculty", href: "/admin/faculty", icon: Users },
                     { name: "Batches", href: "/admin/batches", icon: Users },
-                    { name: "Academics", href: "/admin/academics", icon: BookOpen },
+                    { name: "Courses", href: "/admin/courses", icon: BookOpen },
+                    { name: "Academics", href: "/admin/academics", icon: Calendar },
                     { name: "Notices", href: "/admin/notices", icon: FileText },
                 ];
             case "SUPER_ADMIN":

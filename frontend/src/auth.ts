@@ -52,6 +52,10 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 session.user.id = token.sub;
                 // @ts-ignore
                 session.user.role = token.role;
+                // @ts-ignore
+                session.user.departmentId = token.departmentId;
+                // @ts-ignore
+                session.user.isTopDepartmentAdmin = token.isTopDepartmentAdmin;
             }
             return session;
         },
@@ -59,6 +63,10 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             if (user) {
                 // @ts-ignore
                 token.role = user.role;
+                // @ts-ignore
+                token.departmentId = user.departmentId;
+                // @ts-ignore
+                token.isTopDepartmentAdmin = user.isTopDepartmentAdmin;
             }
             return token;
         }

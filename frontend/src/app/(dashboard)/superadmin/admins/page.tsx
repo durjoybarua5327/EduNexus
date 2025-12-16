@@ -43,7 +43,8 @@ function AdminsContent() {
         name: "",
         email: "",
         role: "",
-        departmentId: ""
+        departmentId: "",
+        password: ""
     });
 
     useEffect(() => {
@@ -165,16 +166,25 @@ function AdminsContent() {
             name: user.name,
             email: user.email,
             role: user.role,
-            departmentId: user.departmentId || ""
+            departmentId: user.departmentId || "",
+            password: ""
         });
         setIsEditModalOpen(true);
     }
 
     async function toggleBan(userId: string, isBanned: boolean) {
         if (isBanned) {
-            if (!confirm("Unban this user?")) return;
-            await updateUser(userId, { isBanned: false });
-            toast.success("User unbanned");
+            setConfirmModal({
+                isOpen: true,
+                title: "Unban User",
+                message: "Are you sure you want to unban this user?",
+                isDanger: false,
+                onConfirm: async () => {
+                    await updateUser(userId, { isBanned: false });
+                    toast.success("User unbanned");
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
+            });
         } else {
             setBanData({ id: userId, duration: 7 });
             setIsBanModalOpen(true);
@@ -591,6 +601,25 @@ function AdminsContent() {
                                                 onChange={e => setEditData({ ...editData, email: e.target.value })}
                                                 required
                                             />
+                                        </div>
+                                        <div className="col-span-2 relative">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">New Password (optional)</label>
+                                            <div className="relative">
+                                                <input
+                                                    type={showPassword ? "text" : "password"}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all pr-10"
+                                                    placeholder="Leave blank to keep current"
+                                                    value={editData.password || ""}
+                                                    onChange={e => setEditData({ ...editData, password: e.target.value })}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-indigo-600"
+                                                >
+                                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>

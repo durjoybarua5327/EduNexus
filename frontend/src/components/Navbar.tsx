@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Menu, X, LogOut, Link as LinkIcon, UserCircle, LayoutDashboard, Building2, Network, Users, BookOpen, FileText, Calendar, Bell } from "lucide-react";
-import { useState } from "react";
+import { User, Menu, X, LogOut, Link as LinkIcon, LayoutDashboard, Building2, Network, Users, BookOpen, FileText, Calendar, Bell } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
 
 interface NavbarProps {
@@ -20,6 +20,17 @@ interface NavbarProps {
 export function Navbar({ user, links = [], onMenuClick }: NavbarProps) {
     const pathname = usePathname();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const profileRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+                setIsProfileOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     // Helper to get icon based on name
     const getIcon = (name: string) => {
@@ -32,6 +43,8 @@ export function Navbar({ user, links = [], onMenuClick }: NavbarProps) {
             case "Routine": return <Calendar className="w-4 h-4" />;
             case "Notices": return <Bell className="w-4 h-4" />;
             case "Resources": return <FileText className="w-4 h-4" />;
+            case "Courses": return <BookOpen className="w-4 h-4" />;
+            case "Academics": return <Calendar className="w-4 h-4" />;
             default: return <LinkIcon className="w-4 h-4" />;
         }
     };
@@ -85,7 +98,7 @@ export function Navbar({ user, links = [], onMenuClick }: NavbarProps) {
                 </div>
 
                 <div className="flex items-center">
-                    <div className="flex items-center ml-3 relative">
+                    <div className="flex items-center ml-3 relative" ref={profileRef}>
                         <button
                             type="button"
                             className="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-50 items-center justify-center w-9 h-9 transition-transform active:scale-95"
@@ -115,15 +128,7 @@ export function Navbar({ user, links = [], onMenuClick }: NavbarProps) {
                                     </span>
                                 </div>
                                 <div className="p-1">
-                                    <Link
-                                        href="/dashboard/profile"
-                                        className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                                        role="menuitem"
-                                        onClick={() => setIsProfileOpen(false)}
-                                    >
-                                        <UserCircle className="w-4 h-4 mr-2 text-gray-400" />
-                                        Profile Settings
-                                    </Link>
+                                    {/* Profile Settings removed as per request */}
                                     <button
                                         onClick={() => signOut()}
                                         className="flex w-full items-center px-3 py-2 text-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors"

@@ -11,7 +11,15 @@ type AuditAction =
     | 'DEPARTMENT_CREATED'
     | 'DEPARTMENT_DELETED'
     | 'DEPARTMENT_RENAMED'
-    | 'UNIVERSITY_CREATED';
+    | 'UNIVERSITY_CREATED'
+    | 'BATCH_CREATED'
+    | 'BATCH_UPDATED'
+    | 'BATCH_DELETED'
+    | 'COURSE_CREATED'
+    | 'COURSE_UPDATED'
+    | 'COURSE_DELETED'
+    | 'NOTICE_CREATED'
+    | 'CONTENT_REMOVED';
 
 export async function logAudit(action: AuditAction, actorId: string, details: string, targetId?: string) {
     try {

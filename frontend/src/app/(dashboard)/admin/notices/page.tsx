@@ -1,0 +1,221 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { Plus, Bell, Trash2, Calendar, MapPin, Pin } from "lucide-react";
+import { Modal } from "@/components/Modal";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
+import toast from "react-hot-toast";
+
+export default function NoticesPage() {
+    const { data: session } = useSession();
+    // @ts-ignore
+    const deptId = session?.user?.departmentId;
+
+    const [notices, setNotices] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isAddOpen, setIsAddOpen] = useState(false);
+
+    const [formData, setFormData] = useState({
+        title: "",
+        description: "",
+        priority: "MEDIUM",
+        expiryDate: "",
+        isPinned: false
+    });
+
+    const [lastSubmitTime, setLastSubmitTime] = useState(0);
+
+    useEffect(() => {
+        if (deptId) fetchNotices();
+    }, [deptId]);
+
+    async function fetchNotices() {
+        try {
+            const res = await fetch(`/api/dept/notices?departmentId=${deptId}`);
+            if (res.ok) setNotices(await res.json());
+        } catch (e) { console.error(e); }
+        finally { setLoading(false); }
+    }
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+
+        const now = Date.now();
+        if (now - lastSubmitTime < 5000) {
+            toast.error(`Please wait ${Math.ceil((5000 - (now - lastSubmitTime)) / 1000)}s before posting again.`);
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/dept/notices", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...formData, departmentId: deptId }),
+            });
+            if (res.ok) {
+                setLastSubmitTime(Date.now());
+                toast.success("Notice posted");
+                setIsAddOpen(false);
+                setFormData({ title: "", description: "", priority: "MEDIUM", expiryDate: "", isPinned: false });
+                fetchNotices();
+            } else {
+                toast.error("Failed to post notice");
+            }
+        } catch (e) { toast.error("An error occurred"); }
+    }
+
+    const [confirmAction, setConfirmAction] = useState<{
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        isDanger?: boolean;
+        confirmText?: string;
+    } | null>(null);
+
+    async function handleDelete(id: string) {
+        setConfirmAction({
+            title: "Delete Notice",
+            message: "Are you sure you want to delete this notice? This action cannot be undone.",
+            isDanger: true,
+            confirmText: "Delete",
+            onConfirm: async () => {
+                try {
+                    const res = await fetch(`/api/dept/notices?id=${id}`, { method: "DELETE" });
+                    if (res.ok) {
+                        toast.success("Notice deleted");
+                        fetchNotices();
+                    } else {
+                        toast.error("Failed to delete notice");
+                    }
+                } catch (e) {
+                    console.error(e);
+                    toast.error("An error occurred");
+                }
+            }
+        });
+    }
+
+    if (!deptId) return null;
+
+    return (
+        <div className="p-6 space-y-6 animate-in fade-in duration-500">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-800">Notice Board</h1>
+                    <p className="text-gray-500">Post announcements for students and faculty.</p>
+                </div>
+                <button
+                    onClick={() => setIsAddOpen(true)}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+                >
+                    <Plus className="w-5 h-5" /> Post Notice
+                </button>
+            </div>
+
+            {loading ? <div className="text-center py-10">Loading...</div> : (
+                <div className="space-y-4">
+                    {notices.map(notice => (
+                        <div key={notice.id} className={`bg-white p-6 rounded-xl shadow-sm border ${notice.isPinned ? 'border-indigo-200 bg-indigo-50/30' : 'border-gray-100'} hover:shadow-md transition-all relative`}>
+                            {notice.isPinned && (
+                                <div className="absolute top-4 right-4 text-indigo-500">
+                                    <Pin className="w-5 h-5 fill-current" />
+                                </div>
+                            )}
+
+                            <div className="flex justify-between items-start pr-10">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${notice.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
+                                            notice.priority === 'LOW' ? 'bg-gray-100 text-gray-700' :
+                                                'bg-blue-100 text-blue-700'
+                                            }`}>
+                                            {notice.priority} Priority
+                                        </span>
+                                        <span className="text-xs text-gray-400">
+                                            {new Date(notice.createdAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">{notice.title}</h3>
+                                    <p className="text-gray-600 whitespace-pre-wrap">{notice.description}</p>
+                                </div>
+                                <button onClick={() => handleDelete(notice.id)} className="text-gray-300 hover:text-red-500 transition-colors self-start">
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            {notice.expiryDate && (
+                                <div className="mt-4 flex items-center gap-2 text-xs text-orange-600 font-medium bg-orange-50 inline-flex px-2 py-1 rounded">
+                                    <Calendar className="w-3 h-3" /> Expires: {new Date(notice.expiryDate).toLocaleDateString()}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                    {notices.length === 0 && (
+                        <div className="text-center py-12 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
+                            No active notices.
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Post New Notice">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                        <input className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                            required placeholder="e.g. Mid-Term Exam Schedule"
+                            value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-32"
+                            placeholder="Write the details here..."
+                            value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                            <select className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                value={formData.priority} onChange={e => setFormData({ ...formData, priority: e.target.value })}>
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="HIGH">High</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date (Optional)</label>
+                            <input type="date" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                value={formData.expiryDate} onChange={e => setFormData({ ...formData, expiryDate: e.target.value })} />
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <input type="checkbox" id="pin" className="w-4 h-4 text-indigo-600 rounded"
+                            checked={formData.isPinned} onChange={e => setFormData({ ...formData, isPinned: e.target.checked })} />
+                        <label htmlFor="pin" className="text-sm text-gray-700 font-medium">Pin to top</label>
+                    </div>
+
+                    <div className="flex justify-end gap-3 mt-6">
+                        <button type="button" onClick={() => setIsAddOpen(false)} className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+                        <button type="submit" className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">Post Notice</button>
+                    </div>
+                </form>
+            </Modal>
+
+
+
+            {/* Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={!!confirmAction}
+                onClose={() => setConfirmAction(null)}
+                title={confirmAction?.title || "Confirm Action"}
+                message={confirmAction?.message || "Are you sure?"}
+                onConfirm={confirmAction?.onConfirm || (() => { })}
+                isDanger={confirmAction?.isDanger}
+                confirmText={confirmAction?.confirmText}
+            />
+        </div >
+    );
+}

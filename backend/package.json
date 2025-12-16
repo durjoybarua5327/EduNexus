@@ -1,0 +1,31 @@
+{
+  "name": "edunexus-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx prisma db push && next dev -p 3001",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.1",
+    "bcryptjs": "^3.0.3",
+    "next": "16.0.10",
+    "next-auth": "^5.0.0-beta.30",
+    "react": "19.2.1",
+    "react-dom": "19.2.1",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.10",
+    "prisma": "^6.19.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  }
+}

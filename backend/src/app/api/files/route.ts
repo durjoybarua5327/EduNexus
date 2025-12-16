@@ -1,5 +1,6 @@
+
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
+import pool from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -7,76 +8,61 @@ export async function GET(req: Request) {
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
-    const folderId = searchParams.get('folderId') === 'null' ? null : searchParams.get('folderId');
+    const parentId = searchParams.get("parentId") === "root" ? null : searchParams.get("parentId");
 
-    const whereClause: any = {
-        parentId: folderId,
-        ownerId: session.user.id
-    };
+    try {
+        let folderQuery = "SELECT * FROM Folder WHERE parentId ";
+        let fileQuery = "SELECT * FROM File WHERE folderId ";
+        const params: any[] = [];
 
-    const folders = await prisma.folder.findMany({
-        where: whereClause,
-        orderBy: { name: 'asc' },
-        include: { _count: { select: { files: true } } }
-    });
-
-    const files = folderId ? await prisma.file.findMany({
-        where: { folderId },
-        orderBy: { createdAt: 'desc' }
-    }) : [];
-
-    let breadcrumbs: any[] = [];
-    if (folderId) {
-        let current = await prisma.folder.findUnique({ where: { id: folderId } });
-        while (current) {
-            breadcrumbs.unshift(current);
-            if (current.parentId) {
-                current = await prisma.folder.findUnique({ where: { id: current.parentId } });
-            } else {
-                current = null;
-            }
+        if (parentId) {
+            folderQuery += "= ?";
+            fileQuery += "= ?";
+            params.push(parentId);
+        } else {
+            folderQuery += "IS NULL";
+            fileQuery += "IS NULL";
         }
-    }
 
-    return NextResponse.json({ folders, files, breadcrumbs });
+        const [folders] = await pool.query(folderQuery, params);
+        const [files] = await pool.query(fileQuery, params);
+
+        return NextResponse.json({ folders, files });
+    } catch (e) {
+        console.error(e);
+        return NextResponse.json({ error: "Database error" }, { status: 500 });
+    }
 }
 
 export async function POST(req: Request) {
     const session = await auth();
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const data = await req.json();
+    const body = await req.json();
+    const { type, name, parentId, folderId, size, url } = body;
+    const userId = session.user.id;
 
-    if (data.type === 'folder') {
-        try {
-            await prisma.folder.create({
-                data: {
-                    name: data.name,
-                    ownerId: session.user.id,
-                    parentId: data.parentId === 'root' ? null : data.parentId,
-                    isPublic: data.isPublic
-                }
-            });
+    try {
+        if (type === "folder") {
+            const id = 'folder-' + Date.now();
+            const pid = parentId === "root" ? null : parentId;
+            await pool.query(
+                "INSERT INTO Folder (id, name, parentId, ownerId) VALUES (?, ?, ?, ?)",
+                [id, name, pid, userId]
+            );
             return NextResponse.json({ success: true });
-        } catch (e) {
-            return NextResponse.json({ error: e }, { status: 500 });
-        }
-    } else if (data.type === 'file') {
-        try {
-            await prisma.file.create({
-                data: {
-                    name: data.name,
-                    folderId: data.folderId,
-                    url: "/dummy.pdf",
-                    type: data.fileType,
-                    size: data.fileSize
-                }
-            });
+        } else if (type === "file") {
+            const id = 'file-' + Date.now();
+            await pool.query(
+                "INSERT INTO File (id, name, url, folderId, size, type) VALUES (?, ?, ?, ?, ?, ?)",
+                [id, name, url, folderId, size, "unknown"]
+            );
             return NextResponse.json({ success: true });
-        } catch (e) {
-            return NextResponse.json({ error: "Upload failed" }, { status: 500 });
         }
+        return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+    } catch (e) {
+        console.error(e);
+        return NextResponse.json({ error: "Database error" }, { status: 500 });
     }
-
-    return NextResponse.json({ error: "Invalid type" }, { status: 400 });
 }
+

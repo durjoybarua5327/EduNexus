@@ -1,19 +1,13 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
+import pool from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET() {
     const session = await auth();
-    if (session?.user?.role !== 'DEPT_ADMIN' && session?.user?.role !== 'SUPER_ADMIN') {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const batches = await prisma.batch.findMany({
-        include: { _count: { select: { students: true } } },
-        orderBy: { name: 'desc' }
-    });
-
-    return NextResponse.json(batches);
+    const [rows] = await pool.query("SELECT * FROM Batch");
+    return NextResponse.json(rows);
 }
 
 export async function POST(req: Request) {
@@ -22,27 +16,14 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name } = await req.json();
-
-    let dept = await prisma.department.findFirst();
-    if (!dept) {
-        dept = await prisma.department.create({
-            data: {
-                name: "Computer Science",
-                university: { create: { name: "Demo University" } }
-            }
-        });
-    }
+    const { name, departmentId } = await req.json();
+    const id = 'batch-' + Date.now();
 
     try {
-        await prisma.batch.create({
-            data: {
-                name,
-                departmentId: dept.id
-            }
-        });
+        await pool.query("INSERT INTO Batch (id, name, departmentId) VALUES (?, ?, ?)", [id, name, departmentId]);
         return NextResponse.json({ success: true });
     } catch (e) {
+        console.error(e);
         return NextResponse.json({ error: "Failed to create batch" }, { status: 500 });
     }
 }

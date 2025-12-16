@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
+import pool from "@/lib/db";
 import { NextResponse } from "next/server";
-import { Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 export async function GET() {
@@ -10,13 +9,8 @@ export async function GET() {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const faculty = await prisma.user.findMany({
-        where: { role: 'TEACHER' },
-        include: { teacherProfile: true },
-        orderBy: { name: 'asc' }
-    });
-
-    return NextResponse.json(faculty);
+    const [rows] = await pool.query("SELECT * FROM User WHERE role = 'TEACHER' ORDER BY name ASC");
+    return NextResponse.json(rows);
 }
 
 export async function POST(req: Request) {
@@ -33,20 +27,23 @@ export async function POST(req: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const id = Date.now().toString(); // Simple ID generation
 
     try {
-        await prisma.user.create({
-            data: {
-                name,
-                email,
-                password: hashedPassword,
-                role: role as Role,
-                ...(role === 'TEACHER' ? { teacherProfile: { create: {} } } : {}),
-                ...(role === 'STUDENT' ? { studentProfile: { create: { batchId: "PENDING_BATCH", studentIdNo: "TBD" } } } : {}),
-            }
-        });
+        await pool.query(
+            "INSERT INTO User (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)",
+            [id, name, email, hashedPassword, role]
+        );
+
+        if (role === 'TEACHER') {
+            await pool.query("INSERT INTO TeacherProfile (id, userId) VALUES (?, ?)", [Date.now().toString(), id]);
+        } else if (role === 'STUDENT') {
+            await pool.query("INSERT INTO StudentProfile (id, userId, batchId, studentIdNo) VALUES (?, ?, ?, ?)", [Date.now().toString(), id, 'PENDING_BATCH', 'TBD']);
+        }
+
         return NextResponse.json({ success: true });
     } catch (e) {
+        console.error(e);
         return NextResponse.json({ error: "User already exists or database error" }, { status: 500 });
     }
 }

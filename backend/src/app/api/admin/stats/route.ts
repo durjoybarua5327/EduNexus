@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
+import pool from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -8,17 +8,15 @@ export async function GET() {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const [students, teachers, batches, courses] = await Promise.all([
-        prisma.user.count({ where: { role: 'STUDENT' } }),
-        prisma.user.count({ where: { role: 'TEACHER' } }),
-        prisma.batch.count(),
-        prisma.course.count(),
-    ]);
+    const [studentRows] = await pool.query<any[]>("SELECT COUNT(*) as count FROM User WHERE role = 'STUDENT'");
+    const [teacherRows] = await pool.query<any[]>("SELECT COUNT(*) as count FROM User WHERE role = 'TEACHER'");
+    const [batchRows] = await pool.query<any[]>("SELECT COUNT(*) as count FROM Batch");
+    const [courseRows] = await pool.query<any[]>("SELECT COUNT(*) as count FROM Course");
 
     return NextResponse.json({
-        students,
-        teachers,
-        batches,
-        courses
+        students: studentRows[0].count,
+        teachers: teacherRows[0].count,
+        batches: batchRows[0].count,
+        courses: courseRows[0].count
     });
 }

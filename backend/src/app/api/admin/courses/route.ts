@@ -1,6 +1,14 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
+import pool from "@/lib/db";
 import { NextResponse } from "next/server";
+
+export async function GET() {
+    const session = await auth();
+    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const [rows] = await pool.query("SELECT * FROM Course");
+    return NextResponse.json(rows);
+}
 
 export async function POST(req: Request) {
     const session = await auth();
@@ -8,21 +16,17 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, code, semester } = await req.json();
-
-    let dept = await prisma.department.findFirst();
+    const { name, code, teacherId } = await req.json();
+    const id = 'course-' + Date.now();
 
     try {
-        await prisma.course.create({
-            data: {
-                name,
-                code,
-                semester,
-                departmentId: dept!.id
-            }
-        });
+        await pool.query(
+            "INSERT INTO Course (id, name, code, teacherId) VALUES (?, ?, ?, ?)",
+            [id, name, code, teacherId]
+        );
         return NextResponse.json({ success: true });
     } catch (e) {
-        return NextResponse.json({ error: "Failed to create course" }, { status: 500 });
+        console.error(e);
+        return NextResponse.json({ error: "Database error" }, { status: 500 });
     }
 }

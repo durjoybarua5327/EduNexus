@@ -42,9 +42,7 @@ npm install
 npm run dev
 ```
 
-## 🔑 Default Credentials
-- **Dept Admin**: `admin@edunexus.com` / `password123`
-- **Student**: `student@edunexus.com` / `password123`
+
 
 ## 🛠 Tech Stack
 - **Framework**: Next.js 15

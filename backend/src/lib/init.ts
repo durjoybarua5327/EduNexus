@@ -53,19 +53,31 @@ export async function initDatabase() {
         id VARCHAR(191) PRIMARY KEY,
         name VARCHAR(191) NOT NULL,
         location VARCHAR(191),
+        isBanned BOOLEAN DEFAULT FALSE,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Ensure column exists
+    try { await db.query("ALTER TABLE University ADD COLUMN isBanned BOOLEAN DEFAULT FALSE"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+    try { await db.query("ALTER TABLE University ADD COLUMN location VARCHAR(191)"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
 
     await db.query(`
       CREATE TABLE IF NOT EXISTS Department (
         id VARCHAR(191) PRIMARY KEY,
         name VARCHAR(191) NOT NULL,
         universityId VARCHAR(191),
+        isBanned BOOLEAN DEFAULT FALSE,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (universityId) REFERENCES University(id) ON DELETE CASCADE
       )
     `);
+
+    // Ensure column exists
+    try { await db.query("ALTER TABLE Department ADD COLUMN isBanned BOOLEAN DEFAULT FALSE"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+
+
+
 
     await db.query(`
       CREATE TABLE IF NOT EXISTS Batch (
@@ -89,9 +101,38 @@ export async function initDatabase() {
         role ENUM('SUPER_ADMIN', 'DEPT_ADMIN', 'TEACHER', 'STUDENT', 'CR') DEFAULT 'STUDENT',
         departmentId VARCHAR(191),
         image VARCHAR(191),
+        isBanned BOOLEAN DEFAULT FALSE,
+        banExpiresAt DATETIME,
+        isTopDepartmentAdmin BOOLEAN DEFAULT FALSE,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (departmentId) REFERENCES Department(id) ON DELETE SET NULL
+      )
+    `);
+
+    // Ensure columns exist for existing databases
+    try {
+      await db.query("ALTER TABLE User ADD COLUMN isBanned BOOLEAN DEFAULT FALSE");
+    } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+
+    try {
+      await db.query("ALTER TABLE User ADD COLUMN banExpiresAt DATETIME");
+    } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+
+    try {
+      await db.query("ALTER TABLE User ADD COLUMN isTopDepartmentAdmin BOOLEAN DEFAULT FALSE");
+    } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+
+    // --- Audit Logs (Placed after User for FK) ---
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS AuditLog (
+        id VARCHAR(191) PRIMARY KEY,
+        action VARCHAR(191) NOT NULL,
+        actorId VARCHAR(191) NOT NULL,
+        targetId VARCHAR(191),
+        details TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (actorId) REFERENCES User(id) ON DELETE CASCADE
       )
     `);
 
@@ -193,10 +234,14 @@ export async function initDatabase() {
     console.log('✅ Tables initialized successfully.');
 
     // Seed Super Admin if not exists
-    const [rows] = await db.query<any[]>('SELECT * FROM User WHERE role = ?', ['SUPER_ADMIN']);
-    if (rows.length === 0) {
+    // Seed Super Admin if not exists
+    const targetEmail = 'durjoybarua8115@gmail.com';
+    const [existingAdmin] = await db.query<any[]>('SELECT * FROM User WHERE email = ?', [targetEmail]);
+
+    if (existingAdmin.length === 0) {
       console.log('Seeding Super Admin...');
-      const hashedPassword = await bcrypt.hash('password123', 10);
+      // Password provided: 53278753905678
+      const hashedPassword = await bcrypt.hash('53278753905678', 10);
       const adminId = 'super-admin-' + Date.now();
 
       // Ensure dummy university exists for seed
@@ -207,9 +252,11 @@ export async function initDatabase() {
 
       await db.query(
         'INSERT INTO User (id, name, email, password, role, departmentId) VALUES (?, ?, ?, ?, ?, ?)',
-        [adminId, 'Super Admin', 'super@edunexus.com', hashedPassword, 'SUPER_ADMIN', deptId]
+        [adminId, 'Super Admin', targetEmail, hashedPassword, 'SUPER_ADMIN', deptId]
       );
-      console.log('✅ Super Admin created: super@edunexus.com');
+      console.log(`✅ Super Admin created: ${targetEmail}`);
+    } else {
+      console.log(`ℹ️ Super Admin already exists: ${targetEmail}`);
     }
 
     db.release();
@@ -221,9 +268,10 @@ export async function initDatabase() {
       console.error('Please verify your credentials in backend/.env');
       console.error('Current configuration trying to connect as:', process.env.DATABASE_URL?.split('@')[0].split('//')[1]);
       console.error('----------------------------------------------------');
+      throw error;
     } else {
       console.error('❌ Error initializing database:', error);
+      throw error;
     }
-    process.exit(1);
   }
 }

@@ -8,9 +8,10 @@ interface ModalProps {
     onClose: () => void;
     title: string;
     children: React.ReactNode;
+    maxWidth?: string;
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-md" }: ModalProps) {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
@@ -30,7 +31,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
             onClick={onClose}
         >
             <div
-                className={`bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transition-all duration-200 transform border border-white/20 ${isOpen ? "scale-100 translate-y-0" : "scale-95 translate-y-4"}`}
+                className={`bg-white rounded-2xl shadow-xl w-full ${maxWidth} overflow-hidden transition-all duration-200 transform border border-white/20 ${isOpen ? "scale-100 translate-y-0" : "scale-95 translate-y-4"}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">

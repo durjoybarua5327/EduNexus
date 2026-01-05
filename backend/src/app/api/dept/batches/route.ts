@@ -10,6 +10,7 @@ const BatchSchema = z.object({
     section: z.string().optional(),
     startMonth: z.string().optional(),
     currentSemester: z.string().optional(),
+    actorId: z.string().optional(),
 });
 
 export async function GET(req: Request) {
@@ -62,7 +63,7 @@ export async function POST(req: Request) {
         const parsed = BatchSchema.safeParse(data);
         if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-        const { name, year, section, startMonth, currentSemester } = parsed.data;
+        const { name, year, section, startMonth, currentSemester, actorId } = parsed.data;
 
         // Check for duplicates
         const [existing] = await pool.query<any[]>(
@@ -81,7 +82,7 @@ export async function POST(req: Request) {
             [id, name, departmentId, year, section || "A", startMonth || "January", currentSemester || "1st"]
         );
 
-        await logAudit('BATCH_CREATED', 'system', `Created batch ${name} (${year}) in dept ${departmentId}`, id);
+        await logAudit('BATCH_CREATED', actorId || 'system', `Created batch ${name} (${year}) in dept ${departmentId}`, id);
 
         return NextResponse.json({ message: "Batch created" }, { status: 201 });
     } catch (error) {
@@ -100,14 +101,14 @@ export async function PUT(req: Request) {
         const parsed = BatchSchema.safeParse(data);
         if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-        const { name, year, section, startMonth, currentSemester } = parsed.data;
+        const { name, year, section, startMonth, currentSemester, actorId } = parsed.data;
 
         await pool.query(
             "UPDATE Batch SET name = ?, year = ?, section = ?, startMonth = ?, currentSemester = ? WHERE id = ?",
             [name, year, section || "A", startMonth || "January", currentSemester || "1st", id]
         );
 
-        await logAudit('BATCH_UPDATED', 'system', `Updated batch ${name} (${year})`, id);
+        await logAudit('BATCH_UPDATED', actorId || 'system', `Updated batch ${name} (${year})`, id);
 
         return NextResponse.json({ message: "Batch updated" });
     } catch (error) {

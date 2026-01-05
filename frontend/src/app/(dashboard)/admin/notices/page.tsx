@@ -2,10 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Plus, Bell, Trash2, Calendar, MapPin, Pin } from "lucide-react";
+import { Plus, Bell, Trash2, Calendar, MapPin, Pin, Edit } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { TagInput } from "@/components/TagInput";
 import toast from "react-hot-toast";
+import dynamic from 'next/dynamic';
+
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+import 'react-quill-new/dist/quill.snow.css';
 
 export default function NoticesPage() {
     const { data: session } = useSession();
@@ -15,13 +20,12 @@ export default function NoticesPage() {
     const [notices, setNotices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddOpen, setIsAddOpen] = useState(false);
-
     const [formData, setFormData] = useState({
         title: "",
         description: "",
-        priority: "MEDIUM",
         expiryDate: "",
-        isPinned: false
+        isPinned: false,
+        tags: [] as string[]
     });
 
     const [lastSubmitTime, setLastSubmitTime] = useState(0);
@@ -48,16 +52,18 @@ export default function NoticesPage() {
         }
 
         try {
+            // @ts-ignore
+            const userId = session?.user?.id;
             const res = await fetch("/api/dept/notices", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...formData, departmentId: deptId }),
+                body: JSON.stringify({ ...formData, departmentId: deptId, actorId: userId }),
             });
             if (res.ok) {
                 setLastSubmitTime(Date.now());
                 toast.success("Notice posted");
                 setIsAddOpen(false);
-                setFormData({ title: "", description: "", priority: "MEDIUM", expiryDate: "", isPinned: false });
+                setFormData({ title: "", description: "", expiryDate: "", isPinned: false, tags: [] });
                 fetchNotices();
             } else {
                 toast.error("Failed to post notice");
@@ -98,6 +104,16 @@ export default function NoticesPage() {
 
     if (!deptId) return null;
 
+    // React Quill Modules for Toolbar
+    const modules = {
+        toolbar: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+            ['link', 'clean']
+        ],
+    };
+
     return (
         <div className="p-6 space-y-6 animate-in fade-in duration-500">
             <div className="flex justify-between items-center">
@@ -114,38 +130,50 @@ export default function NoticesPage() {
             </div>
 
             {loading ? <div className="text-center py-10">Loading...</div> : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                     {notices.map(notice => (
-                        <div key={notice.id} className={`bg-white p-6 rounded-xl shadow-sm border ${notice.isPinned ? 'border-indigo-200 bg-indigo-50/30' : 'border-gray-100'} hover:shadow-md transition-all relative`}>
+                        <div key={notice.id} className={`bg-white p-6 rounded-xl shadow-sm border ${notice.isPinned ? 'border-indigo-200 bg-indigo-50/30' : 'border-gray-100'} hover:shadow-md transition-all relative group`}>
                             {notice.isPinned && (
-                                <div className="absolute top-4 right-4 text-indigo-500">
+                                <div className="absolute top-4 right-4 text-indigo-500" title="Pinned Notice">
                                     <Pin className="w-5 h-5 fill-current" />
                                 </div>
                             )}
 
-                            <div className="flex justify-between items-start pr-10">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${notice.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
-                                            notice.priority === 'LOW' ? 'bg-gray-100 text-gray-700' :
-                                                'bg-blue-100 text-blue-700'
-                                            }`}>
-                                            {notice.priority} Priority
-                                        </span>
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                                         <span className="text-xs text-gray-400">
                                             {new Date(notice.createdAt).toLocaleDateString()}
                                         </span>
+
+                                        {/* Display Tags */}
+                                        {notice.tags && notice.tags.length > 0 && (
+                                            <div className="flex gap-1">
+                                                {notice.tags.map((tag: string) => (
+                                                    <span key={tag} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] rounded-full">
+                                                        #{tag}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-2">{notice.title}</h3>
-                                    <p className="text-gray-600 whitespace-pre-wrap">{notice.description}</p>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-3">{notice.title}</h3>
+
+                                    {/* Rich Text Content */}
+                                    <div
+                                        className="prose prose-sm max-w-none text-gray-600 quill-content"
+                                        dangerouslySetInnerHTML={{ __html: notice.description }}
+                                    />
                                 </div>
-                                <button onClick={() => handleDelete(notice.id)} className="text-gray-300 hover:text-red-500 transition-colors self-start">
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
+                                <div className="flex items-start pl-4 min-w-[30px]">
+                                    <button onClick={() => handleDelete(notice.id)} className="text-gray-300 hover:text-red-500 transition-colors p-1">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
 
                             {notice.expiryDate && (
-                                <div className="mt-4 flex items-center gap-2 text-xs text-orange-600 font-medium bg-orange-50 inline-flex px-2 py-1 rounded">
+                                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2 text-xs text-orange-600 font-medium">
                                     <Calendar className="w-3 h-3" /> Expires: {new Date(notice.expiryDate).toLocaleDateString()}
                                 </div>
                             )}
@@ -159,47 +187,78 @@ export default function NoticesPage() {
                 </div>
             )}
 
-            <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Post New Notice">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                        <input className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                            required placeholder="e.g. Mid-Term Exam Schedule"
-                            value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <textarea className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-32"
-                            placeholder="Write the details here..."
-                            value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
-                    </div>
+            {/* Create Post Modal */}
+            <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Create Post" maxWidth="max-w-4xl">
+                <form onSubmit={handleSubmit} className="flex flex-col h-full">
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                            <select className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                                value={formData.priority} onChange={e => setFormData({ ...formData, priority: e.target.value })}>
-                                <option value="LOW">Low</option>
-                                <option value="MEDIUM">Medium</option>
-                                <option value="HIGH">High</option>
-                            </select>
+                    {/* Scrollable Body */}
+                    <div className="flex-1 overflow-y-auto max-h-[60vh] p-1">
+
+                        {/* User Profile Header */}
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                                {session?.user?.name?.[0] || 'A'}
+                            </div>
+                            <div>
+                                <p className="font-semibold text-gray-900">{session?.user?.name || 'Department Admin'}</p>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                        <Bell className="w-3 h-3" /> Public
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date (Optional)</label>
-                            <input type="date" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                                value={formData.expiryDate} onChange={e => setFormData({ ...formData, expiryDate: e.target.value })} />
+
+                        {/* Title Input */}
+                        <div className="mb-4">
+                            <input
+                                className="w-full text-xl font-bold placeholder-gray-400 border-none focus:ring-0 outline-none p-0"
+                                required
+                                placeholder="Title of your notice..."
+                                value={formData.title}
+                                onChange={e => setFormData({ ...formData, title: e.target.value })}
+                            />
+                        </div>
+
+                        {/* Rich Text Editor */}
+                        <div className="mb-4">
+                            <ReactQuill
+                                theme="snow"
+                                value={formData.description}
+                                onChange={(value) => setFormData({ ...formData, description: value })}
+                                modules={modules}
+                                placeholder="What's on your mind?"
+                                className="h-64 mb-12 quill-content-preserved"
+                            />
+                        </div>
+
+                        {/* Tags & Options */}
+                        <div className="border rounded-xl p-4 space-y-4 bg-gray-50 mt-8">
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 uppercase mb-2 block">Tags</label>
+                                <TagInput tags={formData.tags} setTags={(tags) => setFormData({ ...formData, tags })} />
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4">
+                                <div>
+                                    <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Expires (Optional)</label>
+                                    <input type="date" className="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white"
+                                        value={formData.expiryDate} onChange={e => setFormData({ ...formData, expiryDate: e.target.value })} />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <input type="checkbox" id="pin" className="w-4 h-4 text-indigo-600 rounded"
+                                    checked={formData.isPinned} onChange={e => setFormData({ ...formData, isPinned: e.target.checked })} />
+                                <label htmlFor="pin" className="text-sm text-gray-700 font-medium">Pin to top of board</label>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <input type="checkbox" id="pin" className="w-4 h-4 text-indigo-600 rounded"
-                            checked={formData.isPinned} onChange={e => setFormData({ ...formData, isPinned: e.target.checked })} />
-                        <label htmlFor="pin" className="text-sm text-gray-700 font-medium">Pin to top</label>
-                    </div>
-
-                    <div className="flex justify-end gap-3 mt-6">
-                        <button type="button" onClick={() => setIsAddOpen(false)} className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
-                        <button type="submit" className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">Post Notice</button>
+                    {/* Sticky Footer */}
+                    <div className="border-t border-gray-100 pt-4 mt-4 flex justify-end gap-3 sticky bottom-0 bg-white z-10">
+                        <button type="button" onClick={() => setIsAddOpen(false)} className="px-4 py-2 text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 font-medium w-full md:w-auto">Cancel</button>
+                        <button type="submit" className="px-8 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold w-full md:w-auto shadow-lg shadow-indigo-200">Post</button>
                     </div>
                 </form>
             </Modal>

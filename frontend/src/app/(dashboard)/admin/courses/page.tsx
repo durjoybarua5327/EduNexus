@@ -51,9 +51,15 @@ export default function CoursesPage() {
             const res = await fetch(`/api/dept/semesters?departmentId=${deptId}`);
             if (res.ok) {
                 const data = await res.json();
-                setSemesters(data);
-                if (data.length > 0 && !selectedSemester) {
-                    setSelectedSemester(data[0]);
+                // Sort semesters in ascending numerical order (extract number from ordinal)
+                const sortedData = data.sort((a: any, b: any) => {
+                    const numA = parseInt(a.name.replace(/\D/g, '')) || 0;
+                    const numB = parseInt(b.name.replace(/\D/g, '')) || 0;
+                    return numA - numB;
+                });
+                setSemesters(sortedData);
+                if (sortedData.length > 0 && !selectedSemester) {
+                    setSelectedSemester(sortedData[0]);
                 }
             }
         } catch (e) { console.error(e); }
@@ -73,6 +79,24 @@ export default function CoursesPage() {
         } catch (e) { console.error(e); }
     }
 
+    // Helper function to convert number to ordinal (1 -> 1st, 2 -> 2nd, etc.)
+    function getOrdinal(num: number): string {
+        const numStr = num.toString();
+        const lastDigit = num % 10;
+        const lastTwoDigits = num % 100;
+
+        if (lastTwoDigits >= 11 && lastTwoDigits <= 13) {
+            return numStr + "th";
+        }
+
+        switch (lastDigit) {
+            case 1: return numStr + "st";
+            case 2: return numStr + "nd";
+            case 3: return numStr + "rd";
+            default: return numStr + "th";
+        }
+    }
+
     async function handleSemesterSubmit(e: React.FormEvent) {
         e.preventDefault();
 
@@ -83,10 +107,14 @@ export default function CoursesPage() {
         }
 
         try {
+            // Convert number to ordinal format (1 -> 1st, 2 -> 2nd, etc.)
+            const semesterNumber = parseInt(semesterForm.name);
+            const ordinalName = getOrdinal(semesterNumber);
+
             const res = await fetch("/api/dept/semesters", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...semesterForm, departmentId: deptId }),
+                body: JSON.stringify({ name: ordinalName, departmentId: deptId }),
             });
             if (res.ok) {
                 setLastSubmitTime(Date.now());
@@ -94,7 +122,10 @@ export default function CoursesPage() {
                 setIsSemesterModalOpen(false);
                 setSemesterForm({ name: "" });
                 fetchSemesters();
-            } else toast.error("Failed to create semester");
+            } else {
+                const data = await res.json();
+                toast.error(data.error || "Failed to create semester");
+            }
         } catch (e) { toast.error("Error"); }
     }
 
@@ -109,17 +140,21 @@ export default function CoursesPage() {
 
         try {
             const res = await fetch("/api/dept/courses", {
-                method: "POST",
+                method: isEditMode ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    ...courseForm,
-                    semesterId: selectedSemester?.id,
-                    departmentId: deptId
+                    id: isEditMode ? editingCourse.id : undefined,
+                    name: courseForm.name,
+                    code: courseForm.code,
+                    teacherId: courseForm.teacherId || undefined,
+                    semesterId: selectedSemester.id,
+                    departmentId: deptId,
+                    actorId: session?.user?.id // Added for Audit Logging
                 }),
             });
             if (res.ok) {
                 setLastSubmitTime(Date.now());
-                toast.success("Course created");
+                toast.success(`Course ${isEditMode ? "updated" : "created"}`);
                 setIsCourseModalOpen(false);
                 setCourseForm({ name: "", code: "", teacherId: "" });
                 fetchCourses(selectedSemester.id);
@@ -205,38 +240,40 @@ export default function CoursesPage() {
             {loading ? <div className="text-center py-10">Loading...</div> : (
                 <div className="grid grid-cols-12 gap-6">
                     {/* Semester Sidebar */}
-                    <div className="col-span-12 md:col-span-3 space-y-2">
+                    <div className="col-span-12 md:col-span-3">
                         <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Semesters</h3>
-                        {semesters.map(sem => (
-                            <div
-                                key={sem.id}
-                                onClick={() => setSelectedSemester(sem)}
-                                className={`p-4 rounded-xl cursor-pointer transition-all group relative ${selectedSemester?.id === sem.id
-                                    ? "bg-indigo-50 border-2 border-indigo-200 shadow-sm"
-                                    : "bg-white border border-gray-200 hover:border-indigo-200 hover:shadow-sm"
-                                    }`}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <GraduationCap className={`w-5 h-5 ${selectedSemester?.id === sem.id ? 'text-indigo-600' : 'text-gray-400'}`} />
-                                        <span className={`font-semibold ${selectedSemester?.id === sem.id ? 'text-indigo-700' : 'text-gray-700'}`}>
-                                            {sem.name} Semester
-                                        </span>
+                        <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
+                            {semesters.map(sem => (
+                                <div
+                                    key={sem.id}
+                                    onClick={() => setSelectedSemester(sem)}
+                                    className={`p-4 rounded-xl cursor-pointer transition-all group relative ${selectedSemester?.id === sem.id
+                                        ? "bg-indigo-50 border-2 border-indigo-200 shadow-sm"
+                                        : "bg-white border border-gray-200 hover:border-indigo-200 hover:shadow-sm"
+                                        }`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <GraduationCap className={`w-5 h-5 ${selectedSemester?.id === sem.id ? 'text-indigo-600' : 'text-gray-400'}`} />
+                                            <span className={`font-semibold ${selectedSemester?.id === sem.id ? 'text-indigo-700' : 'text-gray-700'}`}>
+                                                {sem.name} Semester
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteSemester(sem.id); }}
+                                            className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleDeleteSemester(sem.id); }}
-                                        className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
                                 </div>
-                            </div>
-                        ))}
-                        {semesters.length === 0 && (
-                            <div className="text-center py-8 text-gray-400 text-sm">
-                                No semesters yet. Create one to get started.
-                            </div>
-                        )}
+                            ))}
+                            {semesters.length === 0 && (
+                                <div className="text-center py-8 text-gray-400 text-sm">
+                                    No semesters yet. Create one to get started.
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Courses Grid */}
@@ -290,10 +327,15 @@ export default function CoursesPage() {
             <Modal isOpen={isSemesterModalOpen} onClose={() => setIsSemesterModalOpen(false)} title="Create New Semester">
                 <form onSubmit={handleSemesterSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Semester Name</label>
-                        <input className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                            required placeholder="e.g. 1st, 2nd, Summer"
-                            value={semesterForm.name} onChange={e => setSemesterForm({ ...semesterForm, name: e.target.value })} />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Semester Number</label>
+                        <input
+                            type="number"
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                            required
+                            placeholder="e.g. 1, 2, 10, 12"
+                            min="1"
+                            value={semesterForm.name}
+                            onChange={e => setSemesterForm({ ...semesterForm, name: e.target.value })} />
                     </div>
                     <div className="flex justify-end gap-3 mt-6">
                         <button type="button" onClick={() => setIsSemesterModalOpen(false)} className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>

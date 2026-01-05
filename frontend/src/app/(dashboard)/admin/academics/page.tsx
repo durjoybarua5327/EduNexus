@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Plus, BookOpen, Trash2, Calendar, User, Clock, Image as ImageIcon } from "lucide-react";
+import Link from "next/link";
 import { Modal } from "@/components/Modal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import toast from "react-hot-toast";
@@ -24,6 +25,9 @@ export default function AcademicsPage() {
 
     // Forms
     const [routineForm, setRoutineForm] = useState({ batchId: "", type: "CLASS", content: "", url: "" });
+    const [selectedBatches, setSelectedBatches] = useState<string[]>([]);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [uploadMethod, setUploadMethod] = useState<'file' | 'link'>('file');
 
     useEffect(() => {
         if (deptId) {
@@ -62,19 +66,66 @@ export default function AcademicsPage() {
 
     async function handleRoutineSubmit(e: React.FormEvent) {
         e.preventDefault();
+
+        // Validate batch selection
+        if (selectedBatches.length === 0) {
+            toast.error("Please select at least one batch");
+            return;
+        }
+
         try {
+            let fileUrl = routineForm.url;
+
+            // If a file is selected, upload it first
+            if (selectedFile) {
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', selectedFile);
+
+                const uploadRes = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: uploadFormData,
+                });
+
+                if (!uploadRes.ok) {
+                    const error = await uploadRes.json();
+                    toast.error(error.error || 'Failed to upload file');
+                    return;
+                }
+
+                const uploadData = await uploadRes.json();
+                fileUrl = uploadData.url;
+            }
+
+            const type = activeTab === 'EXAMS' ? 'EXAM' : 'CLASS';
+
+            // @ts-ignore
+            const userId = session?.user?.id;
+
             const res = await fetch("/api/dept/routines", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...routineForm, type: activeTab === 'EXAMS' ? 'EXAM' : 'CLASS' }),
+                body: JSON.stringify({
+                    ...routineForm,
+                    batchId: selectedBatches.join(','), // Send as comma-separated string
+                    departmentId: deptId, // Added for ALL case
+                    actorId: userId, // Added for Audit Logging
+                    url: fileUrl,
+                    type: type
+                }),
             });
             if (res.ok) {
-                toast.success(`${activeTab === 'EXAMS' ? 'Exam Schedule' : 'Routine'} uploaded`);
+                const successMsg = activeTab === 'EXAMS' ? 'Exam Schedule' : 'Routine';
+                toast.success(`${successMsg} uploaded successfully`);
                 setIsRoutineModalOpen(false);
                 setRoutineForm({ batchId: "", type: "CLASS", content: "", url: "" });
-                fetchRoutines(activeTab === 'EXAMS' ? 'EXAM' : 'CLASS');
+                setSelectedBatches([]);
+                setSelectedFile(null);
+                fetchRoutines(type);
             } else toast.error("Failed to upload");
-        } catch (e) { toast.error("Error"); }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error uploading file");
+        }
     }
 
     const [confirmAction, setConfirmAction] = useState<{
@@ -106,6 +157,43 @@ export default function AcademicsPage() {
         });
     }
 
+    function handleViewDocument(url: string) {
+        // For regular URLs (new uploads), open directly
+        if (!url.startsWith('data:')) {
+            window.open(url, '_blank');
+            return;
+        }
+
+        // For legacy base64 data, convert to blob and open
+        try {
+            const base64Data = url.split(',')[1];
+            const mimeType = url.split(';')[0].split(':')[1];
+
+            const binaryString = window.atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+
+            const blob = new Blob([bytes], { type: mimeType });
+            const blobUrl = URL.createObjectURL(blob);
+
+            const newWindow = window.open(blobUrl, '_blank');
+
+            if (!newWindow) {
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = `document.${mimeType.includes('pdf') ? 'pdf' : 'file'}`;
+                link.click();
+            }
+
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+        } catch (error) {
+            console.error('Error opening document:', error);
+            toast.error('Failed to open document');
+        }
+    }
+
     if (!deptId) return null;
 
     return (
@@ -134,6 +222,9 @@ export default function AcademicsPage() {
                     className={`px-6 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'EXAMS' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                     Exam Schedules
                 </button>
+                <Link href="/admin/notices" className="px-6 py-3 text-sm font-medium transition-colors border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    Notices
+                </Link>
             </div>
 
             {loading ? <div className="text-center py-10">Loading...</div> : (
@@ -157,26 +248,50 @@ export default function AcademicsPage() {
                                 </button>
                             </div>
 
-                            {routine.url && (
-                                <div className="relative aspect-video bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
-                                    {/* Placeholder for real image or link */}
-                                    <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                                        <ImageIcon className="w-8 h-8 opacity-50" />
-                                        <span className="ml-2 text-sm">Image Preview</span>
-                                    </div>
-                                    <img src={routine.url} alt="Routine" className="absolute inset-0 w-full h-full object-cover opacity-0 hover:opacity-100 transition-opacity" />
-                                </div>
-                            )}
-
                             {routine.content && (
                                 <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-700 whitespace-pre-wrap">
                                     {routine.content}
                                 </div>
                             )}
 
-                            <div className="mt-auto pt-2">
-                                <a href={routine.url} target="_blank" className="text-sm text-indigo-600 hover:underline font-medium">View Full Document →</a>
-                            </div>
+                            {routine.url && (
+                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                    {/* File Preview */}
+                                    {(routine.url.startsWith('data:image') || routine.url.includes('/uploads/') && /\.(jpg|jpeg|png|gif|webp)$/i.test(routine.url) || /\.(jpg|jpeg|png|gif|webp)$/i.test(routine.url)) ? (
+                                        <img
+                                            src={routine.url}
+                                            alt="Preview"
+                                            className="w-16 h-16 object-cover rounded border border-gray-300"
+                                        />
+                                    ) : (
+                                        <div className="w-16 h-16 bg-white rounded border border-gray-300 flex items-center justify-center">
+                                            <ImageIcon className="w-8 h-8 text-gray-400" />
+                                        </div>
+                                    )}
+
+                                    {/* File Info */}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-gray-900 truncate">
+                                            {routine.url.includes('/uploads/') ? 'Uploaded File' :
+                                                routine.url.startsWith('data:') ? 'Uploaded File' :
+                                                    'Document Link'}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                            {routine.url.startsWith('data:image') || (routine.url.includes('/uploads/') && /\.(jpg|jpeg|png|gif|webp)$/i.test(routine.url)) || /\.(jpg|jpeg|png|gif|webp)$/i.test(routine.url) ? 'Image' :
+                                                routine.url.startsWith('data:application/pdf') || routine.url.includes('.pdf') ? 'PDF Document' :
+                                                    'External Link'}
+                                        </p>
+                                    </div>
+
+                                    {/* View Button */}
+                                    <button
+                                        onClick={() => handleViewDocument(routine.url)}
+                                        className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap"
+                                    >
+                                        View Document
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ))}
                     {routines.length === 0 && <EmptyState message={`No ${activeTab === 'ROUTINES' ? 'class routines' : 'exam schedules'} found.`} />}
@@ -187,19 +302,132 @@ export default function AcademicsPage() {
             <Modal isOpen={isRoutineModalOpen} onClose={() => setIsRoutineModalOpen(false)} title={`Upload ${activeTab === 'EXAMS' ? 'Exam Schedule' : 'Routine'}`}>
                 <form onSubmit={handleRoutineSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Select Batch</label>
-                        <select className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                            required value={routineForm.batchId} onChange={e => setRoutineForm({ ...routineForm, batchId: e.target.value })}>
-                            <option value="">Choose Batch</option>
-                            {batches.map(b => <option key={b.id} value={b.id}>{b.name} ({b.year})</option>)}
-                        </select>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Select Batch(es)
+                            {selectedBatches.length > 0 && (
+                                <span className="ml-2 text-xs text-indigo-600 font-semibold">
+                                    ({selectedBatches.includes('ALL') ? 'All Batches' : `${selectedBatches.length} selected`})
+                                </span>
+                            )}
+                        </label>
+                        <div className="border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2 bg-gray-50">
+                            {/* Select All Option */}
+                            <label className="flex items-center cursor-pointer hover:bg-white p-2 rounded transition-colors">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedBatches.includes('ALL')}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            setSelectedBatches(['ALL']);
+                                        } else {
+                                            setSelectedBatches([]);
+                                        }
+                                    }}
+                                    className="mr-3 w-4 h-4 text-indigo-600 focus:ring-indigo-500 rounded"
+                                />
+                                <span className="font-semibold text-indigo-700">All Batches</span>
+                            </label>
+
+                            <div className="border-t border-gray-200 my-2"></div>
+
+                            {/* Individual Batch Options */}
+                            {batches.map(batch => (
+                                <label key={batch.id} className="flex items-center cursor-pointer hover:bg-white p-2 rounded transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedBatches.includes(batch.id) || selectedBatches.includes('ALL')}
+                                        disabled={selectedBatches.includes('ALL')}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setSelectedBatches([...selectedBatches.filter(id => id !== 'ALL'), batch.id]);
+                                            } else {
+                                                setSelectedBatches(selectedBatches.filter(id => id !== batch.id));
+                                            }
+                                        }}
+                                        className="mr-3 w-4 h-4 text-indigo-600 focus:ring-indigo-500 rounded disabled:opacity-50"
+                                    />
+                                    <span className="text-sm text-gray-700">{batch.name} ({batch.year})</span>
+                                </label>
+                            ))}
+
+                            {batches.length === 0 && (
+                                <p className="text-sm text-gray-400 text-center py-2">No batches available</p>
+                            )}
+                        </div>
                     </div>
+
+                    {/* Upload Method Selector */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Image URL (or File Link)</label>
-                        <input className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                            placeholder="https://..."
-                            value={routineForm.url} onChange={e => setRoutineForm({ ...routineForm, url: e.target.value })} />
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Upload Method</label>
+                        <div className="flex gap-4">
+                            <label className="flex items-center cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="uploadMethod"
+                                    value="file"
+                                    checked={uploadMethod === 'file'}
+                                    onChange={() => {
+                                        setUploadMethod('file');
+                                        setRoutineForm({ ...routineForm, url: "" });
+                                    }}
+                                    className="mr-2"
+                                />
+                                <span className="text-sm text-gray-700">Upload File</span>
+                            </label>
+                            <label className="flex items-center cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="uploadMethod"
+                                    value="link"
+                                    checked={uploadMethod === 'link'}
+                                    onChange={() => {
+                                        setUploadMethod('link');
+                                        setSelectedFile(null);
+                                    }}
+                                    className="mr-2"
+                                />
+                                <span className="text-sm text-gray-700">Provide Link</span>
+                            </label>
+                        </div>
                     </div>
+
+                    {/* Conditional Input Based on Upload Method */}
+                    {uploadMethod === 'file' ? (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Upload File (Image or PDF)</label>
+                            <input
+                                key="file-input"
+                                type="file"
+                                accept="image/*,.pdf"
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                onChange={e => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        setSelectedFile(file);
+                                        setRoutineForm({ ...routineForm, url: "" });
+                                    }
+                                }}
+                            />
+                            {selectedFile && (
+                                <p className="mt-2 text-sm text-gray-600">
+                                    Selected: <span className="font-medium">{selectedFile.name}</span> ({(selectedFile.size / 1024).toFixed(2)} KB)
+                                </p>
+                            )}
+                        </div>
+                    ) : (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Document Link/URL</label>
+                            <input
+                                type="url"
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                placeholder="https://example.com/document.pdf"
+                                value={routineForm.url}
+                                onChange={e => setRoutineForm({ ...routineForm, url: e.target.value })}
+                            />
+                            <p className="mt-1 text-xs text-gray-500">Enter a link to Google Drive, Dropbox, or any publicly accessible document</p>
+                        </div>
+                    )}
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes / Text Content</label>
                         <textarea className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-24"

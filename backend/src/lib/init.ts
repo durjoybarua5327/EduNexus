@@ -241,13 +241,33 @@ export async function initDatabase() {
       CREATE TABLE IF NOT EXISTS Notice (
         id VARCHAR(191) PRIMARY KEY,
         title VARCHAR(191) NOT NULL,
-        description TEXT,
+        description LONGTEXT,
         priority ENUM('LOW', 'MEDIUM', 'HIGH') DEFAULT 'MEDIUM',
         expiryDate DATETIME,
         departmentId VARCHAR(191),
         isPinned BOOLEAN DEFAULT FALSE,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (departmentId) REFERENCES Department(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Ensure description is LONGTEXT to hold rich text
+    try { await db.query("ALTER TABLE Notice MODIFY description LONGTEXT"); } catch (e: any) { }
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS Tag (
+        id VARCHAR(191) PRIMARY KEY,
+        name VARCHAR(191) UNIQUE NOT NULL
+      )
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS NoticeTag (
+        noticeId VARCHAR(191),
+        tagId VARCHAR(191),
+        PRIMARY KEY (noticeId, tagId),
+        FOREIGN KEY (noticeId) REFERENCES Notice(id) ON DELETE CASCADE,
+        FOREIGN KEY (tagId) REFERENCES Tag(id) ON DELETE CASCADE
       )
     `);
 

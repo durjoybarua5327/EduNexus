@@ -6,9 +6,11 @@ import { z } from "zod";
 
 const RoutineSchema = z.object({
     batchId: z.string().min(1),
-    type: z.enum(['CLASS', 'EXAM']),
+    type: z.enum(['CLASS', 'EXAM', 'NOTICE']),
     content: z.string().optional(),
     url: z.string().optional(),
+    departmentId: z.string().optional(), // Added for ALL case
+    actorId: z.string().optional(), // Added for Audit Logging
 });
 
 export async function GET(req: Request) {
@@ -48,25 +50,46 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        // departmentId is not needed for insertion as we link to batchId, 
-        // but we might want to verify batch belongs to dept? Skipping for speed.
 
         const parsed = RoutineSchema.safeParse(body);
         if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-        const { batchId, type, content, url } = parsed.data;
-        const id = "rtn-" + Date.now();
+        const { batchId, type, content, url, departmentId, actorId } = parsed.data;
 
-        await pool.query(
-            "INSERT INTO Routine (id, batchId, type, content, url) VALUES (?, ?, ?, ?, ?)",
-            [id, batchId, type, content || "", url || ""]
-        );
+        let batchIds: string[] = [];
 
-        // Fetch user ID from session/token ideally, using 'system' for now
-        await logAudit('NOTICE_CREATED', 'system', `Created ${type} routine for batch ${batchId}`, id);
-        // Note: Reusing NOTICE_CREATED as generic 'content created' or should add ROUTINE_CREATED to audit.ts later.
+        // Handle "ALL" - fetch all batches from department
+        if (batchId === 'ALL') {
+            if (!departmentId) {
+                return NextResponse.json({ error: "Department ID required for ALL batches" }, { status: 400 });
+            }
+            const [batches] = await pool.query<any[]>(
+                "SELECT id FROM Batch WHERE departmentId = ?",
+                [departmentId]
+            );
+            batchIds = batches.map(b => b.id);
+        } else {
+            // Handle comma-separated batch IDs or single ID
+            batchIds = batchId.split(',').map(id => id.trim()).filter(id => id.length > 0);
+        }
 
-        return NextResponse.json({ message: "Routine created" }, { status: 201 });
+        if (batchIds.length === 0) {
+            return NextResponse.json({ error: "No valid batches found" }, { status: 400 });
+        }
+
+        // Create a routine entry for each batch
+        const timestamp = Date.now();
+        for (let i = 0; i < batchIds.length; i++) {
+            const id = `rtn-${timestamp}-${i}`;
+            await pool.query(
+                "INSERT INTO Routine (id, batchId, type, content, url) VALUES (?, ?, ?, ?, ?)",
+                [id, batchIds[i], type, content || "", url || ""]
+            );
+        }
+
+        await logAudit('NOTICE_CREATED', actorId || 'system', `Created ${type} routine for ${batchIds.length} batch(es)`, `rtn-${timestamp}`);
+
+        return NextResponse.json({ message: "Routine created", count: batchIds.length }, { status: 201 });
     } catch (error) {
         console.error("Error creating routine:", error);
         return NextResponse.json({ error: "Failed to create routine" }, { status: 500 });

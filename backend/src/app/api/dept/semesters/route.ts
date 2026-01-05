@@ -17,7 +17,7 @@ export async function GET(req: Request) {
         }
 
         const [semesters] = await pool.query<any[]>(
-            "SELECT * FROM Semester WHERE departmentId = ? ORDER BY name",
+            "SELECT * FROM Semester WHERE departmentId = ? ORDER BY CAST(REGEXP_REPLACE(name, '[^0-9]', '') AS UNSIGNED) ASC",
             [departmentId]
         );
 
@@ -32,6 +32,16 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
         const { name, departmentId } = SemesterSchema.parse(body);
+
+        // Check for duplicate semester in the same department
+        const [existing] = await pool.query<any[]>(
+            "SELECT id FROM Semester WHERE name = ? AND departmentId = ?",
+            [name, departmentId]
+        );
+
+        if (existing.length > 0) {
+            return NextResponse.json({ error: "Semester already exists in this department" }, { status: 409 });
+        }
 
         const semesterId = `sem-${Date.now()}`;
 

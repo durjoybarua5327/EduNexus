@@ -8,7 +8,8 @@ const CourseSchema = z.object({
     name: z.string().min(1),
     code: z.string().min(1),
     semesterId: z.string().optional(),
-    teacherId: z.string().optional()
+    teacherId: z.string().optional(),
+    actorId: z.string().optional()
 });
 
 export async function GET(req: Request) {
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
         const parsed = CourseSchema.safeParse(data);
         if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-        const { name, code, semesterId, teacherId } = parsed.data;
+        const { name, code, semesterId, teacherId, actorId } = parsed.data;
         const id = "crs-" + Date.now();
 
         await pool.query(
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
             [id, name, code, semesterId || null, departmentId, teacherId || null]
         );
 
-        await logAudit('COURSE_CREATED', 'system', `Created course ${code} - ${name} in dept ${departmentId}`, id);
+        await logAudit('COURSE_CREATED', actorId || 'system', `Created course ${code} - ${name} in dept ${departmentId}`, id);
 
         return NextResponse.json({ message: "Course created" }, { status: 201 });
     } catch (error) {
@@ -83,14 +84,14 @@ export async function PUT(req: Request) {
         const parsed = CourseSchema.safeParse(data);
         if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-        const { name, code, semesterId, teacherId } = parsed.data;
+        const { name, code, semesterId, teacherId, actorId } = parsed.data;
 
         await pool.query(
             "UPDATE Course SET name = ?, code = ?, semesterId = ?, teacherId = ? WHERE id = ?",
             [name, code, semesterId || null, teacherId || null, id]
         );
 
-        await logAudit('COURSE_UPDATED', 'system', `Updated course ${code} - ${name}`, id);
+        await logAudit('COURSE_UPDATED', actorId || 'system', `Updated course ${code} - ${name}`, id);
 
         return NextResponse.json({ message: "Course updated" });
     } catch (error) {

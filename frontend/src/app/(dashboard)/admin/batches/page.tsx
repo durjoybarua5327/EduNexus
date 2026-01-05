@@ -24,6 +24,10 @@ export default function BatchesPage() {
     const [batchStudents, setBatchStudents] = useState<any[]>([]);
     const [loadingStudents, setLoadingStudents] = useState(false);
 
+    // Semesters State
+    const [semesters, setSemesters] = useState<any[]>([]);
+    const [loadingSemesters, setLoadingSemesters] = useState(false);
+
     const [formData, setFormData] = useState({
         name: "",
         year: new Date().getFullYear(),
@@ -62,7 +66,10 @@ export default function BatchesPage() {
     }
 
     useEffect(() => {
-        if (deptId) fetchBatches();
+        if (deptId) {
+            fetchBatches();
+            fetchSemesters();
+        }
     }, [deptId]);
 
     async function fetchBatches() {
@@ -74,6 +81,18 @@ export default function BatchesPage() {
             }
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
+    }
+
+    async function fetchSemesters() {
+        setLoadingSemesters(true);
+        try {
+            const res = await fetch(`/api/dept/semesters?departmentId=${deptId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setSemesters(data);
+            }
+        } catch (e) { console.error(e); }
+        finally { setLoadingSemesters(false); }
     }
 
     async function handleViewStudents(batch: any) {
@@ -158,7 +177,7 @@ export default function BatchesPage() {
             const res = await fetch("/api/dept/batches", {
                 method: isEditMode ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(isEditMode ? { id: editingBatch.id, ...formData } : { ...formData, departmentId: deptId }),
+                body: JSON.stringify(isEditMode ? { id: editingBatch.id, ...formData, actorId: session?.user?.id } : { ...formData, departmentId: deptId, actorId: session?.user?.id }),
             });
             if (res.ok) {
                 if (!isEditMode) setLastSubmitTime(Date.now());
@@ -294,8 +313,11 @@ export default function BatchesPage() {
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Start Month</label>
-                            <select className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                                value={formData.startMonth} onChange={e => setFormData({ ...formData, startMonth: e.target.value })}>
+                            <select
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none max-h-40 overflow-y-auto"
+                                value={formData.startMonth}
+                                onChange={e => setFormData({ ...formData, startMonth: e.target.value })}
+                                size={5}>
                                 <option value="January">January</option>
                                 <option value="July">July</option>
                                 <option value="February">February</option>
@@ -312,16 +334,30 @@ export default function BatchesPage() {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Semester</label>
-                            <select className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                                value={formData.currentSemester} onChange={e => setFormData({ ...formData, currentSemester: e.target.value })}>
-                                <option value="1st">1st Semester</option>
-                                <option value="2nd">2nd Semester</option>
-                                <option value="3rd">3rd Semester</option>
-                                <option value="4th">4th Semester</option>
-                                <option value="5th">5th Semester</option>
-                                <option value="6th">6th Semester</option>
-                                <option value="7th">7th Semester</option>
-                                <option value="8th">8th Semester</option>
+                            <select
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none max-h-40 overflow-y-auto"
+                                value={formData.currentSemester}
+                                onChange={e => setFormData({ ...formData, currentSemester: e.target.value })}
+                                disabled={loadingSemesters}
+                                size={semesters.length > 5 ? 5 : undefined}>
+                                {loadingSemesters ? (
+                                    <option>Loading semesters...</option>
+                                ) : semesters.length > 0 ? (
+                                    semesters.map(sem => (
+                                        <option key={sem.id} value={sem.name}>{sem.name} Semester</option>
+                                    ))
+                                ) : (
+                                    <>
+                                        <option value="1st">1st Semester</option>
+                                        <option value="2nd">2nd Semester</option>
+                                        <option value="3rd">3rd Semester</option>
+                                        <option value="4th">4th Semester</option>
+                                        <option value="5th">5th Semester</option>
+                                        <option value="6th">6th Semester</option>
+                                        <option value="7th">7th Semester</option>
+                                        <option value="8th">8th Semester</option>
+                                    </>
+                                )}
                             </select>
                         </div>
                     </div>

@@ -32,6 +32,7 @@ export function DashboardShell({ children, user }: { children: React.ReactNode, 
                     { name: "Teachers", href: "/admin/faculty" },
                     { name: "Courses", href: "/admin/courses" },
                     { name: "Academics", href: "/admin/academics" },
+                    { name: "Notice", href: "/admin/notices" },
                 ];
                 // @ts-ignore
                 if (user?.isTopDepartmentAdmin) {

@@ -2,108 +2,87 @@
 
 EduNexus is a comprehensive web-based platform designed to streamline department management in educational institutions. It facilitates seamless interaction between Students, Faculty, Department Admins, and Super Admins.
 
-## 🚀 Features
+## 📱 Demos
 
-### 🔐 Authentication & Security
-- **Role-Based Access Control (RBAC)**: Distinct panels for Student, Teacher, Dept Admin, Super Admin.
-- **Secure Login**: JWT-based authentication with `bcryptjs` password hashing.
-- **Frontend Protection**: Protected routes using `next-auth`.
+<div align="center">
+  <img src="demos/image1.png" alt="Demo 1" width="45%" style="margin: 5px;" />
+  <img src="demos/image2.png" alt="Demo 2" width="45%" style="margin: 5px;" />
+  <img src="demos/image3.png" alt="Demo 3" width="45%" style="margin: 5px;" />
+  <img src="demos/image4.png" alt="Demo 4" width="45%" style="margin: 5px;" />
+</div>
+<br/>
+<div align="center">
+  <img src="demos/image5.png" alt="Demo 5" width="30%" style="margin: 5px;" />
+  <img src="demos/image6.png" alt="Demo 6" width="30%" style="margin: 5px;" />
+  <img src="demos/image7.png" alt="Demo 7" width="30%" style="margin: 5px;" />
+</div>
 
-### 🎓 Student & Academic Management
-- **Batches & Sections**: Organize students into batches (Year, Semester, Section).
-- **Class Representatives (CR)**: Assign/Revoke CR roles (Max 4 per batch).
-- **Routine Management**: View class schedules and exam routines.
-- **Notices**: Pin important announcements with priority levels (Low, Medium, High).
+## ⚡ Prerequisites
 
-### 👩‍🏫 Faculty Management
-- **Teacher Profiles**: Manage faculty details, designations, and contact info.
-- **Course Assignment**: Assign specific courses and semesters to teachers.
+Before running the project, ensure you have the following installed:
 
-### 🛠️ Admin Dashboard
-- **User Management**: Create/Edit/Ban users (Students, Teachers, Admins).
-- **Dept Admin Controls**: Manage batches, courses, and department-specific settings.
-- **Super Admin**: Oversee multiple departments and top-level configurations.
-- **Rate Limiting**: 5-second cooldown on critical creation actions (Notices, Batches, Admins) to prevent spam.
+*   **Node.js** (v18 or higher)
+*   **MySQL Server** (Running locally or remotely)
 
-### 🎨 Modern UI/UX
-- **Responsive Design**: Built with Tailwind CSS for mobile-first responsiveness.
-- **Interactive Components**: 
-    - `react-hot-toast` for real-time notifications.
-    - Custom `ConfirmationModal` for critical actions (Deletions, Bans).
-    - Glassmorphism effects and smooth transitions.
+## 🚀 Installation Process
 
-## 🛠️ Technology Stack
+Follow these steps to set up the project locally.
 
-### Frontend
-- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-- **State/Notifications**: React Hooks, React Hot Toast
-- **Auth**: NextAuth.js
+### 1. Clone the Repository
 
-### Backend
-- **Runtime**: Node.js
-- **Framework**: Express.js (Custom Server Entry)
-- **Database**: MySQL (using `mysql2` driver with Raw SQL)
-- **Password Has**: bcryptjs
-- **Validation**: Zod (Frontend & Backend)
-
-## 📂 Project Structure
-
-```
-EduNexus/
-├── Frontend/           # Next.js Application
-│   ├── src/app/        # App Router Pages
-│   └── src/components/ # Reusable UI Components
-├── Backend/            # Express.js Server
-│   ├── src/app/api/    # API Routes
-│   ├── src/lib/        # DB Connection & Init
-│   └── server.ts       # Entry Point
-└── README.md           # Project Documentation
+```bash
+git clone https://github.com/your-repo/EduNexus.git
+cd EduNexus
 ```
 
-## ⚡ Getting Started
+### 2. Setup the Backend
 
-### Prerequisites
-- Node.js (v18+)
-- MySQL Server
+```bash
+cd Backend
+npm install
+```
 
-### Installation
+**Configuration:**
+Create a `.env` file in the `Backend` directory with your database credentials:
 
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/your-repo/EduNexus.git
-    cd EduNexus
-    ```
+```env
+DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/edunexus"
+PORT=3001
+```
 
-2.  **Setup the Backend**
-    ```bash
-    cd Backend
-    npm install
-    # Configure .env file with DB_USER, DB_PASSWORD, DB_NAME
-    npm run dev
-    ```
-    *The backend will automatically initialize the database and tables on first run.*
+**Run Server:**
 
-3.  **Setup the Frontend**
-    ```bash
-    cd ../Frontend
-    npm install
-    # Configure .env.local with NEXTAUTH_SECRET and Backend URL
-    npm run dev
-    ```
+```bash
+npm run dev
+```
 
-4.  **Access the App**
-    - Frontend: `http://localhost:3000`
-    - Backend API: `http://localhost:4000` (or configured port)
+*The backend will automatically initialize the database and tables on the first run.*
 
-## 🛡️ Admin Credentials (Default Seeding)
-*Check `backend/src/lib/seed.ts` (if available) or logs for initial admin credentials.*
+### 3. Setup the Frontend
 
-## 🤝 Contributing
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Open a new terminal and navigate to the `Frontend` directory:
+
+```bash
+cd ../Frontend
+npm install
+```
+
+**Configuration:**
+Create a `.env.local` file in the `Frontend` directory:
+
+```env
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
+NEXTAUTH_SECRET=your_secret_key_here
+NEXTAUTH_URL=http://localhost:3000
+```
+
+**Run Client:**
+
+```bash
+npm run dev
+```
+
+### 4. Access the App
+
+Open your browser and visit:
+*   **Frontend:** `http://localhost:3000`

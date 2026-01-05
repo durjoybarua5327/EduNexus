@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
-    title: string;
+    title?: string;
     children: React.ReactNode;
     maxWidth?: string;
 }
@@ -31,18 +31,28 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-md" 
             onClick={onClose}
         >
             <div
-                className={`bg-white rounded-2xl shadow-xl w-full ${maxWidth} overflow-hidden transition-all duration-200 transform border border-white/20 ${isOpen ? "scale-100 translate-y-0" : "scale-95 translate-y-4"}`}
+                className={`bg-white rounded-2xl shadow-xl w-full ${maxWidth} overflow-hidden transition-all duration-200 transform border border-white/20 ${isOpen ? "scale-100 translate-y-0" : "scale-95 translate-y-4"} relative`}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">
-                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">{title}</h2>
+                {title ? (
+                    <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">
+                        <h2 className="text-xl font-bold text-gray-900 tracking-tight">{title}</h2>
+                        <button
+                            onClick={onClose}
+                            className="p-2 -mr-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+                ) : (
                     <button
                         onClick={onClose}
-                        className="p-2 -mr-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors z-10"
                     >
                         <X className="w-5 h-5" />
                     </button>
-                </div>
+                )}
+
                 <div className="p-6">
                     {children}
                 </div>

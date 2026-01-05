@@ -67,22 +67,27 @@ export async function POST(req: Request) {
 
         // Handle Tags
         if (tags && tags.length > 0) {
+            // Deduplicate tags by their generated ID to prevent PK violations
+            // (e.g. "Exam" and "exam" would both generate "tag-exam")
+            const uniqueTags = new Map<string, string>();
+
             for (const tagName of tags) {
-                // 1. Ensure tag exists
-                // Use INSERT IGNORE or ON DUPLICATE KEY UPDATE to handle existing tags safely
                 const tagId = 'tag-' + tagName.toLowerCase().replace(/\s+/g, '-');
+                if (!uniqueTags.has(tagId)) {
+                    uniqueTags.set(tagId, tagName);
+                }
+            }
+
+            for (const [tagId, tagName] of uniqueTags.entries()) {
+                // 1. Ensure tag exists
                 await pool.query(
                     "INSERT IGNORE INTO Tag (id, name) VALUES (?, ?)",
                     [tagId, tagName]
                 );
 
                 // 2. Link tag to notice
-                // Get the tag ID (it might have been existing, so we query it if we didn't insert)
-                // Actually, if we use a deterministic ID based on name, we know it unless there's a collision.
-                // But better to query to be safe or use the deterministic ID.
-                // Let's use the deterministic ID logic:
                 await pool.query(
-                    "INSERT INTO NoticeTag (noticeId, tagId) VALUES (?, ?)",
+                    "INSERT IGNORE INTO NoticeTag (noticeId, tagId) VALUES (?, ?)",
                     [id, tagId]
                 );
             }
@@ -94,6 +99,52 @@ export async function POST(req: Request) {
     } catch (error) {
         console.error("Error creating notice:", error);
         return NextResponse.json({ error: "Failed to create notice" }, { status: 500 });
+    }
+}
+
+export async function PUT(req: Request) {
+    try {
+        const body = await req.json();
+        const { departmentId, id, ...data } = body;
+
+        if (!id || !departmentId) return NextResponse.json({ error: "ID and Department ID required" }, { status: 400 });
+
+        const parsed = NoticeSchema.safeParse(data);
+        if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+
+        const { title, description, expiryDate, isPinned, tags, actorId } = parsed.data;
+
+        await pool.query(
+            "UPDATE Notice SET title = ?, description = ?, expiryDate = ?, isPinned = ? WHERE id = ? AND departmentId = ?",
+            [title, description || "", expiryDate ? new Date(expiryDate) : null, isPinned, id, departmentId]
+        );
+
+        // Handle Tags (Sync)
+        if (tags) {
+            // 1. Remove old tags
+            await pool.query("DELETE FROM NoticeTag WHERE noticeId = ?", [id]);
+
+            // 2. Add new tags (Deduplicated)
+            if (tags.length > 0) {
+                const uniqueTags = new Map<string, string>();
+                for (const tagName of tags) {
+                    const tagId = 'tag-' + tagName.toLowerCase().replace(/\s+/g, '-');
+                    if (!uniqueTags.has(tagId)) uniqueTags.set(tagId, tagName);
+                }
+
+                for (const [tagId, tagName] of uniqueTags.entries()) {
+                    await pool.query("INSERT IGNORE INTO Tag (id, name) VALUES (?, ?)", [tagId, tagName]);
+                    await pool.query("INSERT IGNORE INTO NoticeTag (noticeId, tagId) VALUES (?, ?)", [id, tagId]);
+                }
+            }
+        }
+
+        await logAudit('NOTICE_UPDATED', actorId || 'system', `Updated notice ${title}`, id);
+
+        return NextResponse.json({ message: "Notice updated" });
+    } catch (error) {
+        console.error("Error updating notice:", error);
+        return NextResponse.json({ error: "Failed to update notice" }, { status: 500 });
     }
 }
 

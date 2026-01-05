@@ -4,17 +4,32 @@ EduNexus is a comprehensive web-based platform designed to streamline department
 
 ## 📱 Demos
 
+### 👨‍💻 Super Admin Demos
+
 <div align="center">
-  <img src="demos/image1.png" alt="Demo 1" width="45%" style="margin: 5px;" />
-  <img src="demos/image2.png" alt="Demo 2" width="45%" style="margin: 5px;" />
-  <img src="demos/image3.png" alt="Demo 3" width="45%" style="margin: 5px;" />
-  <img src="demos/image4.png" alt="Demo 4" width="45%" style="margin: 5px;" />
+  <img src="demos/image1.png" alt="Super Admin Demo 1" width="45%" style="margin: 5px;" />
+  <img src="demos/image2.png" alt="Super Admin Demo 2" width="45%" style="margin: 5px;" />
+  <img src="demos/image3.png" alt="Super Admin Demo 3" width="45%" style="margin: 5px;" />
+  <img src="demos/image4.png" alt="Super Admin Demo 4" width="45%" style="margin: 5px;" />
+  <img src="demos/image5.png" alt="Super Admin Demo 5" width="45%" style="margin: 5px;" />
+  <img src="demos/image6.png" alt="Super Admin Demo 6" width="45%" style="margin: 5px;" />
+  <img src="demos/image7.png" alt="Super Admin Demo 7" width="45%" style="margin: 5px;" />
 </div>
 <br/>
+
+### 👨‍🏫 Department Admin Demos
+
 <div align="center">
-  <img src="demos/image5.png" alt="Demo 5" width="30%" style="margin: 5px;" />
-  <img src="demos/image6.png" alt="Demo 6" width="30%" style="margin: 5px;" />
-  <img src="demos/image7.png" alt="Demo 7" width="30%" style="margin: 5px;" />
+  <img src="demos/image8.png" alt="Dept Admin Demo 1" width="45%" style="margin: 5px;" />
+  <img src="demos/image9.png" alt="Dept Admin Demo 2" width="45%" style="margin: 5px;" />
+  <img src="demos/image10.png" alt="Dept Admin Demo 3" width="45%" style="margin: 5px;" />
+  <img src="demos/image11.png" alt="Dept Admin Demo 4" width="45%" style="margin: 5px;" />
+  <img src="demos/image12.png" alt="Dept Admin Demo 5" width="45%" style="margin: 5px;" />
+  <img src="demos/image13.png" alt="Dept Admin Demo 6" width="45%" style="margin: 5px;" />
+  <img src="demos/image14.png" alt="Dept Admin Demo 7" width="45%" style="margin: 5px;" />
+  <img src="demos/image15.png" alt="Dept Admin Demo 8" width="45%" style="margin: 5px;" />
+  <img src="demos/image16.png" alt="Dept Admin Demo 9" width="45%" style="margin: 5px;" />
+  <img src="demos/image17.png" alt="Dept Admin Demo 10" width="45%" style="margin: 5px;" />
 </div>
 
 ## ⚡ Prerequisites

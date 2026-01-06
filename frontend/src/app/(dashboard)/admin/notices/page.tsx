@@ -156,7 +156,7 @@ export default function NoticesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {notices.map(notice => (
                         <div key={notice.id} className={`p-6 rounded-3xl border transition-transform transition-shadow duration-300 will-change-transform group hover:-translate-y-1 hover:shadow-xl relative overflow-hidden flex flex-col ${notice.isPinned ? 'bg-orange-50/30 border-orange-100 shadow-orange-100/50' : 'bg-white border-gray-100 shadow-sm'}`}>
-                            {notice.isPinned && (
+                            {!!notice.isPinned && (
                                 <div className="absolute top-0 right-0 bg-gradient-to-l from-orange-100 to-transparent px-4 py-1.5 rounded-bl-2xl">
                                     <Pin className="w-4 h-4 text-orange-600 inline-block mr-1" />
                                     <span className="text-xs font-bold text-orange-700 uppercase tracking-wide">Pinned</span>

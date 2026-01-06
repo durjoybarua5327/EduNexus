@@ -198,9 +198,9 @@ export default function DepartmentAdminDashboard() {
 
                         {stats?.recentActivity?.length > 0 && (
                             <div className="text-center pt-4">
-                                <button className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-4 py-2 rounded-lg transition-colors inline-flex items-center">
+                                <Link href="/admin/history" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-4 py-2 rounded-lg transition-colors inline-flex items-center">
                                     View All History <ChevronRight className="w-4 h-4 ml-1" />
-                                </button>
+                                </Link>
                             </div>
                         )}
                     </div>

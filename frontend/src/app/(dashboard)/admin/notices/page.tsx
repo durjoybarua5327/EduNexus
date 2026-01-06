@@ -126,7 +126,7 @@ export default function NoticesPage() {
     };
 
     return (
-        <div className="p-6 space-y-8 animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto">
+        <div className="p-6 space-y-8 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
 
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-white to-orange-50/50 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm">
@@ -155,7 +155,7 @@ export default function NoticesPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {notices.map(notice => (
-                        <div key={notice.id} className={`p-6 rounded-3xl border transition-all duration-300 group hover:-translate-y-1 hover:shadow-xl relative overflow-hidden flex flex-col ${notice.isPinned ? 'bg-orange-50/30 border-orange-100 shadow-orange-100/50' : 'bg-white border-gray-100 shadow-sm'}`}>
+                        <div key={notice.id} className={`p-6 rounded-3xl border transition-transform transition-shadow duration-300 will-change-transform group hover:-translate-y-1 hover:shadow-xl relative overflow-hidden flex flex-col ${notice.isPinned ? 'bg-orange-50/30 border-orange-100 shadow-orange-100/50' : 'bg-white border-gray-100 shadow-sm'}`}>
                             {notice.isPinned && (
                                 <div className="absolute top-0 right-0 bg-gradient-to-l from-orange-100 to-transparent px-4 py-1.5 rounded-bl-2xl">
                                     <Pin className="w-4 h-4 text-orange-600 inline-block mr-1" />
@@ -217,9 +217,9 @@ export default function NoticesPage() {
             )}
 
             {/* Create/Edit Modal */}
-            <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditMode(false); setEditingNotice(null); }} title={editMode ? "Edit Notice" : "Post New Notice"} maxWidth="max-w-4xl">
+            <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditMode(false); setEditingNotice(null); }} title={editMode ? "Edit Notice" : "Post New Notice"} maxWidth="max-w-6xl">
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="col-span-2 space-y-4">
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1.5">Notice Title</label>
@@ -229,14 +229,14 @@ export default function NoticesPage() {
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1.5">Description (Rich Text)</label>
-                                <div className="border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-orange-500 transition-all">
-                                    <div className="max-h-[50vh] overflow-y-auto custom-scrollbar">
+                                <div className="border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-orange-500 transition-all bg-white">
+                                    <div className="h-[60vh] overflow-y-auto custom-scrollbar relative">
                                         <ReactQuill
                                             theme="snow"
                                             value={formData.description}
                                             onChange={val => setFormData({ ...formData, description: val })}
                                             modules={modules}
-                                            className="bg-white min-h-[200px]"
+                                            className="h-full flex flex-col [&_.ql-toolbar]:sticky [&_.ql-toolbar]:top-0 [&_.ql-toolbar]:z-20 [&_.ql-toolbar]:bg-gray-50 [&_.ql-toolbar]:border-b [&_.ql-toolbar]:border-gray-200 [&_.ql-container]:flex-1 [&_.ql-container]:overflow-y-auto [&_.ql-editor]:min-h-[300px]"
                                         />
                                     </div>
                                 </div>

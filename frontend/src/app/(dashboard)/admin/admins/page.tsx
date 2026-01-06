@@ -102,24 +102,33 @@ export default function DeptAdminsPage() {
     }
 
     return (
-        <div className="p-6 space-y-6 animate-in fade-in duration-500">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Department Admins</h1>
-                    <p className="text-gray-500">Manage access for your department.</p>
+        <div className="p-6 space-y-6 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-white to-emerald-50/50 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm relative overflow-hidden">
+                <div className="flex items-center gap-4 relative z-10">
+                    <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl shadow-lg shadow-emerald-200 text-white">
+                        <Shield className="w-8 h-8" />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Department Admins</h1>
+                        <p className="text-gray-500 font-medium mt-1">Manage access for your department.</p>
+                    </div>
                 </div>
                 <button
                     onClick={() => setIsAddOpen(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+                    className="relative z-10 flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 active:scale-95 font-semibold"
                 >
                     <Plus className="w-5 h-5" /> Add Admin
                 </button>
+
+                {/* Decorative Background Element */}
+                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl" />
             </div>
 
             {loading ? <div className="text-center py-10">Loading...</div> : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {admins.map(admin => (
-                        <div key={admin.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center relative overflow-hidden group">
+                        <div key={admin.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center relative overflow-hidden group transition-transform transition-shadow duration-300 will-change-transform hover:-translate-y-1 hover:shadow-lg">
                             {admin.isTopDepartmentAdmin && (
                                 <div className="absolute top-0 right-0 bg-yellow-100 text-yellow-700 px-3 py-1 rounded-bl-xl text-xs font-bold flex items-center gap-1">
                                     <Crown className="w-3 h-3" /> TOP ADMIN

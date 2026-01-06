@@ -135,11 +135,11 @@ export default function FacultyPage() {
     if (!deptId) return null;
 
     return (
-        <div className="p-6 space-y-8 animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto">
+        <div className="p-6 space-y-8 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
 
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-white to-indigo-50/50 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-white to-indigo-50/50 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm relative overflow-hidden">
+                <div className="flex items-center gap-4 relative z-10">
                     <div className="p-3 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-200 text-white">
                         <GraduationCap className="w-8 h-8" />
                     </div>
@@ -150,10 +150,13 @@ export default function FacultyPage() {
                 </div>
                 <button
                     onClick={() => { setEditTarget(null); setFormData({ name: "", email: "", password: "", designation: "Lecturer", phone: "" }); setIsAddOpen(true); }}
-                    className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 active:scale-95 font-semibold"
+                    className="relative z-10 flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 active:scale-95 font-semibold"
                 >
                     <Plus className="w-5 h-5" /> Add Faculty
                 </button>
+
+                {/* Decorative Background Element */}
+                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl" />
             </div>
 
             {/* Search Bar */}
@@ -179,7 +182,7 @@ export default function FacultyPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filtered.map(teacher => (
-                        <div key={teacher.id} className={`bg-white rounded-2xl p-6 border transition-all duration-300 group hover:-translate-y-1 hover:shadow-xl ${teacher.isBanned ? 'border-red-100 bg-red-50/10' : 'border-gray-100 hover:border-indigo-100 shadow-sm'}`}>
+                        <div key={teacher.id} className={`bg-white rounded-2xl p-6 border transition-transform transition-shadow duration-300 will-change-transform group hover:-translate-y-1 hover:shadow-xl ${teacher.isBanned ? 'border-red-100 bg-red-50/10' : 'border-gray-100 hover:border-indigo-100 shadow-sm'}`}>
                             {teacher.isBanned && (
                                 <div className="mb-4 bg-red-50 text-red-700 px-3 py-1 rounded-lg text-xs font-bold uppercase inline-flex items-center gap-1">
                                     <Ban className="w-3 h-3" /> Deactivated Account

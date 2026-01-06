@@ -63,55 +63,53 @@ export function Navbar({ user, links = [], onMenuClick }: NavbarProps) {
 
     return (
         <nav className="fixed z-40 w-full top-6 pointer-events-none">
-            <div className="max-w-7xl mx-auto px-4 pointer-events-auto">
-                <div className="bg-white/80 backdrop-blur-2xl border border-white/40 rounded-2xl shadow-xl shadow-indigo-500/10 flex items-center justify-between h-20 px-6 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/20 hover:scale-[1.005]">
+            <div className="max-w-[1600px] mx-auto px-6 pointer-events-auto">
+                <div className="bg-white/90 backdrop-blur-md border border-white/40 rounded-2xl shadow-xl shadow-indigo-500/10 flex items-center justify-between h-20 px-6 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/20 hover:scale-[1.005] relative">
 
-                    <div className="flex items-center justify-start gap-8">
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={onMenuClick}
-                                type="button"
-                                className="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
-                            >
-                                <span className="sr-only">Open sidebar</span>
-                                <Menu className="w-6 h-6" />
-                            </button>
-                            <Link href="/dashboard" className="flex items-center gap-3 group relative">
-                                <div className="absolute -inset-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
-                                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200 group-hover:scale-105 transition-transform duration-300">
-                                    <span className="text-xl">E</span>
-                                </div>
-                                <span className="self-center text-xl font-bold whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 tracking-tight pl-1">
-                                    EduNexus
-                                </span>
-                            </Link>
-                        </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={onMenuClick}
+                            type="button"
+                            className="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                        >
+                            <span className="sr-only">Open sidebar</span>
+                            <Menu className="w-6 h-6" />
+                        </button>
+                        <Link href="/dashboard" className="flex items-center gap-3 group relative">
+                            <div className="absolute -inset-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
+                            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200 group-hover:scale-105 transition-transform duration-300">
+                                <span className="text-xl">E</span>
+                            </div>
+                            <span className="self-center text-xl font-bold whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 tracking-tight pl-1">
+                                EduNexus
+                            </span>
+                        </Link>
+                    </div>
 
-                        {/* Horizontal Navigation Links - Boxy Style */}
-                        <div className="hidden md:flex items-center gap-2">
-                            {links.map((link) => {
-                                const isRootPath = link.href === '/superadmin' || link.href === '/dashboard';
-                                const isActive = pathname === link.href || (!isRootPath && pathname.startsWith(link.href));
-                                return (
-                                    <Link
-                                        key={link.href}
-                                        href={link.href}
-                                        className={`
+                    {/* Horizontal Navigation Links - Centered */}
+                    <div className="hidden md:flex items-center gap-2 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                        {links.map((link) => {
+                            const isRootPath = link.href === '/superadmin' || link.href === '/dashboard';
+                            const isActive = pathname === link.href || (!isRootPath && pathname.startsWith(link.href));
+                            return (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={`
                                             flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 border relative overflow-hidden group
                                             ${isActive
-                                                ? "bg-indigo-50 text-indigo-700 border-indigo-100 shadow-sm translate-y-[-1px]"
-                                                : "text-gray-500 border-transparent hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm hover:border-gray-200"
-                                            }
+                                            ? "bg-indigo-50 text-indigo-700 border-indigo-100 shadow-sm translate-y-[-1px]"
+                                            : "text-gray-500 border-transparent hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm hover:border-gray-200"
+                                        }
                                         `}
-                                    >
-                                        <span className={`relative z-10 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-indigo-600" : "text-gray-400 group-hover:text-indigo-500"}`}>
-                                            {getIcon(link.name)}
-                                        </span>
-                                        <span className="relative z-10">{link.name}</span>
-                                    </Link>
-                                );
-                            })}
-                        </div>
+                                >
+                                    <span className={`relative z-10 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-indigo-600" : "text-gray-400 group-hover:text-indigo-500"}`}>
+                                        {getIcon(link.name)}
+                                    </span>
+                                    <span className="relative z-10">{link.name}</span>
+                                </Link>
+                            );
+                        })}
                     </div>
 
                     <div className="flex items-center gap-4">

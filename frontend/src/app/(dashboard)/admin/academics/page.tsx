@@ -196,37 +196,45 @@ export default function AcademicsPage() {
     if (!deptId) return null;
 
     return (
-        <div className="p-6 space-y-6 animate-in fade-in duration-500">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Schedules & Routines</h1>
-                    <p className="text-gray-500">Manage class routines and exam schedules.</p>
+        <div className="p-6 space-y-6 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
+            {/* Header & Tabs Section */}
+            <div className="space-y-6">
+                <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-white to-blue-50/50 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg shadow-blue-200 text-white">
+                            <Calendar className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Schedules & Routines</h1>
+                            <p className="text-gray-500 font-medium mt-1">Manage class routines and exam schedules.</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setIsRoutineModalOpen(true)}
+                        className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 active:scale-95 font-semibold"
+                    >
+                        <Plus className="w-5 h-5" />
+                        {activeTab === 'ROUTINES' ? 'Upload Routine' : 'Add Exam Schedule'}
+                    </button>
                 </div>
-                <button
-                    onClick={() => setIsRoutineModalOpen(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
-                >
-                    <Plus className="w-5 h-5" />
-                    {activeTab === 'ROUTINES' ? 'Upload Routine' : 'Add Exam Schedule'}
-                </button>
-            </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-gray-200">
-                <button onClick={() => setActiveTab('ROUTINES')}
-                    className={`px-6 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'ROUTINES' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                    Class Routines
-                </button>
-                <button onClick={() => setActiveTab('EXAMS')}
-                    className={`px-6 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'EXAMS' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                    Exam Schedules
-                </button>
+                {/* Stylish Tabs */}
+                <div className="bg-white/50 p-1.5 rounded-2xl border border-white/50 inline-flex shadow-sm backdrop-blur-sm">
+                    <button onClick={() => setActiveTab('ROUTINES')}
+                        className={`px-6 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 ${activeTab === 'ROUTINES' ? 'bg-white text-indigo-600 shadow-md ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'}`}>
+                        Class Routines
+                    </button>
+                    <button onClick={() => setActiveTab('EXAMS')}
+                        className={`px-6 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 ${activeTab === 'EXAMS' ? 'bg-white text-indigo-600 shadow-md ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'}`}>
+                        Exam Schedules
+                    </button>
+                </div>
             </div>
 
             {loading ? <div className="text-center py-10">Loading...</div> : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {routines.map(routine => (
-                        <div key={routine.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-4">
+                        <div key={routine.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-4 transition-transform transition-shadow duration-300 will-change-transform hover:-translate-y-1 hover:shadow-lg">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h3 className="font-bold text-gray-900 flex items-center gap-2">

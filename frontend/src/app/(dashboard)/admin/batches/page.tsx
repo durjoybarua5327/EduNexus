@@ -214,11 +214,11 @@ export default function BatchesPage() {
     if (!deptId) return null;
 
     return (
-        <div className="p-6 space-y-8 animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto">
+        <div className="p-6 space-y-8 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
 
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-indigo-50/50 to-white/80 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-indigo-50/50 to-white/80 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm relative overflow-hidden">
+                <div className="flex items-center gap-4 relative z-10">
                     <div className="p-3 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-2xl shadow-lg shadow-indigo-200 text-white">
                         <Layers className="w-8 h-8" />
                     </div>
@@ -229,10 +229,13 @@ export default function BatchesPage() {
                 </div>
                 <button
                     onClick={() => setIsAddOpen(true)}
-                    className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 hover:shadow-2xl hover:-translate-y-0.5 active:scale-95 font-semibold"
+                    className="relative z-10 flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 hover:shadow-2xl hover:-translate-y-0.5 active:scale-95 font-semibold"
                 >
                     <Plus className="w-5 h-5" /> Create Batch
                 </button>
+
+                {/* Decorative Background Element */}
+                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl" />
             </div>
 
 
@@ -244,7 +247,7 @@ export default function BatchesPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {batches.map(batch => (
-                        <div key={batch.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
+                        <div key={batch.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group hover:shadow-xl hover:-translate-y-1 transition-transform transition-shadow duration-300 will-change-transform relative overflow-hidden">
                             {/* Card Background Decoration */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full translate-x-10 -translate-y-10 group-hover:scale-110 transition-transform duration-700 opacity-50"></div>
 

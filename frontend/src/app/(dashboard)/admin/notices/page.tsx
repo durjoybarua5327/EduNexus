@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Plus, Bell, Trash2, Calendar, MapPin, Pin, Edit } from "lucide-react";
+import { Plus, Bell, Calendar, Pin, Archive, Trash2, Edit3, Tag, X, Megaphone, Clock } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
-import { TagInput } from "@/components/TagInput";
-import toast from "react-hot-toast";
 import dynamic from 'next/dynamic';
+import 'react-quill-new/dist/quill.snow.css';
+import toast from "react-hot-toast";
+import { TagInput } from "@/components/TagInput";
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
-import 'react-quill-new/dist/quill.snow.css';
 
 export default function NoticesPage() {
     const { data: session } = useSession();
@@ -19,7 +19,10 @@ export default function NoticesPage() {
 
     const [notices, setNotices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isAddOpen, setIsAddOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [editingNotice, setEditingNotice] = useState<any>(null);
+
     const [formData, setFormData] = useState({
         title: "",
         description: "",
@@ -28,11 +31,6 @@ export default function NoticesPage() {
         tags: [] as string[]
     });
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [lastSubmitTime, setLastSubmitTime] = useState(0);
-
-    const [editId, setEditId] = useState<string | null>(null);
-
     useEffect(() => {
         if (deptId) fetchNotices();
     }, [deptId]);
@@ -40,68 +38,38 @@ export default function NoticesPage() {
     async function fetchNotices() {
         try {
             const res = await fetch(`/api/dept/notices?departmentId=${deptId}`);
-            if (res.ok) setNotices(await res.json());
+            if (res.ok) {
+                const data = await res.json();
+                setNotices(data);
+            }
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
     }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-
-        if (isSubmitting) return;
-
-        const now = Date.now();
-        if (!editId && now - lastSubmitTime < 2000) {
-            toast.error("Please wait a moment before posting again.");
-            return;
-        }
-
-        setIsSubmitting(true);
-
         try {
-            // @ts-ignore
-            const userId = session?.user?.id;
-
-            const method = editId ? "PUT" : "POST";
-            const body = { ...formData, departmentId: deptId, actorId: userId, id: editId };
+            const body = editMode
+                ? { ...formData, id: editingNotice.id, departmentId: deptId }
+                : { ...formData, departmentId: deptId };
 
             const res = await fetch("/api/dept/notices", {
-                method,
+                method: editMode ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
             });
 
             if (res.ok) {
-                setLastSubmitTime(Date.now());
-                toast.success(editId ? "Notice updated" : "Notice posted successfully");
-                handleCloseModal();
+                toast.success(editMode ? "Notice updated" : "Notice posted");
+                setIsModalOpen(false);
+                setEditMode(false);
+                setEditingNotice(null);
+                setFormData({ title: "", description: "", expiryDate: "", isPinned: false, tags: [] });
                 fetchNotices();
             } else {
-                const err = await res.json();
-                toast.error(err.error || `Failed to ${editId ? 'update' : 'post'} notice`);
+                toast.error("Failed to save notice");
             }
-        } catch (e) { toast.error("An error occurred"); }
-        finally {
-            setIsSubmitting(false);
-        }
-    }
-
-    function handleEdit(notice: any) {
-        setFormData({
-            title: notice.title,
-            description: notice.description,
-            expiryDate: notice.expiryDate ? new Date(notice.expiryDate).toISOString().split('T')[0] : "",
-            isPinned: notice.isPinned,
-            tags: notice.tags || []
-        });
-        setEditId(notice.id);
-        setIsAddOpen(true);
-    }
-
-    function handleCloseModal() {
-        setIsAddOpen(false);
-        setEditId(null);
-        setFormData({ title: "", description: "", expiryDate: "", isPinned: false, tags: [] });
+        } catch (e) { toast.error("Error occurred"); }
     }
 
     const [confirmAction, setConfirmAction] = useState<{
@@ -125,14 +93,24 @@ export default function NoticesPage() {
                         toast.success("Notice deleted");
                         fetchNotices();
                     } else {
-                        toast.error("Failed to delete notice");
+                        toast.error("Failed to delete");
                     }
-                } catch (e) {
-                    console.error(e);
-                    toast.error("An error occurred");
-                }
+                } catch (e) { toast.error("Error deleting"); }
             }
         });
+    }
+
+    function openEdit(notice: any) {
+        setEditingNotice(notice);
+        setFormData({
+            title: notice.title,
+            description: notice.description,
+            expiryDate: notice.expiryDate ? new Date(notice.expiryDate).toISOString().split('T')[0] : "", // Corrected key from expiresAt to expiryDate
+            isPinned: notice.isPinned,
+            tags: notice.tags // Assuming tags is already an array of strings or handled correctly by TagInput
+        });
+        setEditMode(true);
+        setIsModalOpen(true);
     }
 
     if (!deptId) return null;
@@ -147,268 +125,163 @@ export default function NoticesPage() {
         ],
     };
 
-    const [selectedNotice, setSelectedNotice] = useState<any | null>(null);
-
     return (
-        <div className="p-6 space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto">
-            <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Notice Board</h1>
-                    <p className="text-gray-500 text-sm">Announcements & Updates</p>
+        <div className="p-6 space-y-8 animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto">
+
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-white to-orange-50/50 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-lg shadow-orange-200 text-white">
+                        <Megaphone className="w-8 h-8" />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Notice Board</h1>
+                        <p className="text-gray-500 font-medium mt-1">Announcements and important updates for students.</p>
+                    </div>
                 </div>
                 <button
-                    onClick={() => setIsAddOpen(true)}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 font-medium active:scale-95"
+                    onClick={() => { setEditMode(false); setFormData({ title: "", description: "", expiryDate: "", isPinned: false, tags: [] }); setIsModalOpen(true); }}
+                    className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 active:scale-95 font-semibold"
                 >
-                    <Plus className="w-5 h-5" /> Create Post
+                    <Plus className="w-5 h-5" /> Post Notice
                 </button>
             </div>
 
-            {loading ? <div className="text-center py-10 text-gray-500">Loading feeds...</div> : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loading ? (
+                <div className="text-center py-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                    <p className="text-gray-500 font-medium">Loading notices...</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {notices.map(notice => (
-                        <div
-                            key={notice.id}
-                            onClick={() => setSelectedNotice(notice)}
-                            className={`bg-white rounded-xl shadow-sm border ${notice.isPinned ? 'border-indigo-500 shadow-indigo-100' : 'border-gray-100'} overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer flex flex-col h-[320px] group`}
-                        >
-
-                            {/* Card Header: Author & Options */}
-                            <div className="px-5 pt-5 pb-2 flex justify-between items-start">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-indigo-700 font-bold text-xs border border-indigo-50">
-                                        D
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-gray-900 text-xs">Dept. Admin</h4>
-                                        <p className="text-[10px] text-gray-500">
-                                            {new Date(notice.createdAt).toLocaleDateString()}
-                                            {notice.isPinned && (
-                                                <span className="block text-indigo-600 font-bold flex items-center gap-0.5 mt-0.5">
-                                                    <Pin className="w-3 h-3" /> Pinned
-                                                </span>
-                                            )}
-                                        </p>
-                                    </div>
+                        <div key={notice.id} className={`p-6 rounded-3xl border transition-all duration-300 group hover:-translate-y-1 hover:shadow-xl relative overflow-hidden flex flex-col ${notice.isPinned ? 'bg-orange-50/30 border-orange-100 shadow-orange-100/50' : 'bg-white border-gray-100 shadow-sm'}`}>
+                            {notice.isPinned && (
+                                <div className="absolute top-0 right-0 bg-gradient-to-l from-orange-100 to-transparent px-4 py-1.5 rounded-bl-2xl">
+                                    <Pin className="w-4 h-4 text-orange-600 inline-block mr-1" />
+                                    <span className="text-xs font-bold text-orange-700 uppercase tracking-wide">Pinned</span>
                                 </div>
+                            )}
 
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleEdit(notice); }}
-                                        className="text-gray-400 hover:text-indigo-500 p-1.5 rounded-full hover:bg-indigo-50 transition-colors"
-                                        title="Edit"
-                                    >
-                                        <Edit className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleDelete(notice.id); }}
-                                        className="text-gray-400 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50 transition-colors"
-                                        title="Delete"
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                </div>
+                            <div className="flex justify-between items-start mb-4">
+                                <h3 className="text-xl font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-orange-600 transition-colors pr-8">
+                                    {notice.title}
+                                </h3>
                             </div>
 
-                            {/* Card Body: Preview Content */}
-                            <div className="px-5 flex-1 relative overflow-hidden">
-                                <h3 className="text-lg font-bold text-gray-900 mb-2 leading-snug line-clamp-2">{notice.title}</h3>
-
-                                <div
-                                    className="prose prose-sm max-w-none text-gray-500 text-xs line-clamp-4 leading-relaxed"
-                                    dangerouslySetInnerHTML={{ __html: notice.description }}
-                                />
-                                {/* Bottom Fade Effect */}
-                                <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+                            <div className="flex flex-wrap gap-2 mb-4">
+                                {notice.tags && notice.tags.map((tag: any, idx: number) => (
+                                    <span key={idx} className="text-xs px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-gray-600 font-medium shadow-sm flex items-center gap-1">
+                                        <Tag className="w-3 h-3 text-gray-400" /> {typeof tag === 'string' ? tag : tag.name}
+                                    </span>
+                                ))}
                             </div>
 
-                            {/* Card Footer: Tags & Meta */}
-                            <div className="px-5 py-4 mt-auto border-t border-gray-50 bg-gray-50/30">
-                                <div className="flex flex-wrap gap-1 mb-2 h-6 overflow-hidden">
-                                    {notice.tags && notice.tags.slice(0, 3).map((tag: string) => (
-                                        <span key={tag} className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-medium rounded-full">
-                                            #{tag}
-                                        </span>
-                                    ))}
-                                    {notice.tags && notice.tags.length > 3 && (
-                                        <span className="text-[10px] text-gray-400 py-0.5">+{notice.tags.length - 3}</span>
+                            <div className="prose prose-sm text-gray-600 mb-6 line-clamp-3" dangerouslySetInnerHTML={{ __html: notice.description }} />
+
+                            <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-4 text-gray-500">
+                                    <div className="flex items-center gap-1.5" title="Posted Date">
+                                        <Calendar className="w-4 h-4" />
+                                        <span>{new Date(notice.createdAt).toLocaleDateString()}</span>
+                                    </div>
+                                    {notice.expiryDate && (
+                                        <div className={`flex items-center gap-1.5 ${new Date(notice.expiryDate) < new Date() ? 'text-red-500 font-medium' : ''}`} title="Expiry Date">
+                                            <Clock className="w-4 h-4" />
+                                            <span>{new Date(notice.expiryDate).toLocaleDateString()}</span>
+                                        </div>
                                     )}
                                 </div>
-                                {notice.expiryDate && (
-                                    <div className="flex items-center gap-1 text-[10px] text-orange-600 font-medium">
-                                        <Calendar className="w-3 h-3" />
-                                        Exp: {new Date(notice.expiryDate).toLocaleDateString()}
-                                    </div>
-                                )}
+
+                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => openEdit(notice)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Edit">
+                                        <Edit3 className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={() => handleDelete(notice.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
-
                     {notices.length === 0 && (
-                        <div className="col-span-full text-center py-20 bg-white rounded-xl border border-dashed border-gray-200">
-                            <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="col-span-full py-20 text-center">
+                            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Bell className="w-8 h-8 text-gray-300" />
                             </div>
-                            <h3 className="text-lg font-medium text-gray-900">No notices yet</h3>
-                            <p className="text-gray-500 text-sm mt-1">Create your first post to verify the new design!</p>
+                            <h3 className="text-lg font-medium text-gray-900">No notices posted</h3>
+                            <p className="text-gray-500 mt-1">Keep students updated by posting your first notice.</p>
                         </div>
                     )}
                 </div>
             )}
 
-            {/* View Notice Detail Modal */}
-            <Modal isOpen={!!selectedNotice} onClose={() => setSelectedNotice(null)} title="" maxWidth="max-w-7xl">
-                {selectedNotice && (
-                    <div className="h-full flex flex-col max-h-[85vh]">
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xl">
-                                    D
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-bold text-gray-900">Department Admin</h2>
-                                    <p className="text-sm text-gray-500">
-                                        {new Date(selectedNotice.createdAt).toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' })}
-                                    </p>
-                                </div>
+            {/* Create/Edit Modal */}
+            <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditMode(false); setEditingNotice(null); }} title={editMode ? "Edit Notice" : "Post New Notice"} maxWidth="max-w-4xl">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="col-span-2 space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1.5">Notice Title</label>
+                                <input className="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all placeholder:text-gray-300 text-lg font-medium"
+                                    required placeholder="e.g. Mid-Term Examination Schedule"
+                                    value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
                             </div>
-                            {!!selectedNotice.isPinned && (
-                                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                                    <Pin className="w-3 h-3" /> Pinned
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Scrollable Content */}
-                        <div className="flex-1 overflow-y-auto pr-2">
-                            <h1 className="text-4xl font-bold text-gray-900 mb-8">{selectedNotice.title}</h1>
-
-                            <div
-                                className="prose prose-xl max-w-none text-gray-700 quill-content"
-                                dangerouslySetInnerHTML={{ __html: selectedNotice.description }}
-                            />
-
-                            {/* Tags */}
-                            {selectedNotice.tags && selectedNotice.tags.length > 0 && (
-                                <div className="mt-8 pt-6 border-t border-gray-100">
-                                    <h4 className="text-sm font-semibold text-gray-500 uppercase mb-3">Tags</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {selectedNotice.tags.map((tag: string) => (
-                                            <span key={tag} className="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-medium rounded-full">
-                                                #{tag}
-                                            </span>
-                                        ))}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1.5">Description (Rich Text)</label>
+                                <div className="border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-orange-500 transition-all">
+                                    <div className="max-h-[50vh] overflow-y-auto custom-scrollbar">
+                                        <ReactQuill
+                                            theme="snow"
+                                            value={formData.description}
+                                            onChange={val => setFormData({ ...formData, description: val })}
+                                            modules={modules}
+                                            className="bg-white min-h-[200px]"
+                                        />
                                     </div>
                                 </div>
-                            )}
-
-                            {selectedNotice.expiryDate && (
-                                <div className="mt-6 flex items-center gap-2 text-sm text-orange-600 bg-orange-50 px-4 py-2 rounded-lg inline-flex">
-                                    <Calendar className="w-4 h-4" />
-                                    Expires on: {new Date(selectedNotice.expiryDate).toLocaleDateString()}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Footer Actions */}
-                        <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end gap-3 sticky bottom-0 bg-white">
-                            <button
-                                onClick={() => { handleEdit(selectedNotice); setSelectedNotice(null); }}
-                                className="flex items-center gap-2 px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors font-medium border border-transparent hover:border-indigo-100"
-                            >
-                                <Edit className="w-4 h-4" /> Edit Post
-                            </button>
-                            <button
-                                onClick={() => setSelectedNotice(null)}
-                                className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </Modal>
-
-            {/* Create/Edit Post Modal */}
-            <Modal isOpen={isAddOpen} onClose={handleCloseModal} title={editId ? "Edit Post" : "Create Post"} maxWidth="max-w-4xl">
-                <form onSubmit={handleSubmit} className="flex flex-col h-full">
-
-                    {/* Scrollable Body */}
-                    <div className="flex-1 overflow-y-auto max-h-[60vh] p-1">
-
-                        {/* User Profile Header */}
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
-                                {session?.user?.name?.[0] || 'A'}
                             </div>
+                        </div>
+
+                        <div className="space-y-4 bg-gray-50 p-4 rounded-2xl border border-gray-100 h-fit">
                             <div>
-                                <p className="font-semibold text-gray-900">{session?.user?.name || 'Department Admin'}</p>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                        <Bell className="w-3 h-3" /> Public
-                                    </span>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Configurations</label>
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date (Optional)</label>
+                                        <input type="date" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none text-sm bg-white"
+                                            value={formData.expiryDate} onChange={e => setFormData({ ...formData, expiryDate: e.target.value })} />
+                                    </div>
+                                    <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-gray-200">
+                                        <Pin className={`w-5 h-5 ${formData.isPinned ? 'text-orange-500' : 'text-gray-400'}`} />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-900">Pin to Top</p>
+                                            <p className="text-xs text-gray-500">Keep this notice visible</p>
+                                        </div>
+                                        <input type="checkbox" className="w-5 h-5 text-orange-600 rounded focus:ring-orange-500"
+                                            checked={formData.isPinned} onChange={e => setFormData({ ...formData, isPinned: e.target.checked })} />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Title Input */}
-                        <div className="mb-4">
-                            <input
-                                className="w-full text-xl font-bold placeholder-gray-400 border-none focus:ring-0 outline-none p-0"
-                                required
-                                placeholder="Title of your notice..."
-                                value={formData.title}
-                                onChange={e => setFormData({ ...formData, title: e.target.value })}
-                            />
-                        </div>
-
-                        {/* Rich Text Editor */}
-                        <div className="mb-4">
-                            <ReactQuill
-                                theme="snow"
-                                value={formData.description}
-                                onChange={(value) => setFormData({ ...formData, description: value })}
-                                modules={modules}
-                                placeholder="What's on your mind?"
-                                className="h-64 mb-12 quill-content-preserved"
-                            />
-                        </div>
-
-                        {/* Tags & Options */}
-                        <div className="border rounded-xl p-4 space-y-4 bg-gray-50 mt-8">
                             <div>
-                                <label className="text-xs font-semibold text-gray-500 uppercase mb-2 block">Tags</label>
-                                <TagInput tags={formData.tags} setTags={(tags) => setFormData({ ...formData, tags })} />
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-4">
-                                <div>
-                                    <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Expires (Optional)</label>
-                                    <input type="date" className="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white"
-                                        value={formData.expiryDate} onChange={e => setFormData({ ...formData, expiryDate: e.target.value })} />
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <input type="checkbox" id="pin" className="w-4 h-4 text-indigo-600 rounded"
-                                    checked={formData.isPinned} onChange={e => setFormData({ ...formData, isPinned: e.target.checked })} />
-                                <label htmlFor="pin" className="text-sm text-gray-700 font-medium">Pin to top of board</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Tags</label>
+                                <TagInput
+                                    tags={formData.tags}
+                                    setTags={newTags => setFormData({ ...formData, tags: newTags })}
+                                />
                             </div>
                         </div>
                     </div>
 
-                    {/* Sticky Footer */}
-                    <div className="border-t border-gray-100 pt-4 mt-4 flex justify-end gap-3 sticky bottom-0 bg-white z-10">
-                        <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 font-medium w-full md:w-auto" disabled={isSubmitting}>Cancel</button>
-                        <button type="submit" className="px-8 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold w-full md:w-auto shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled={isSubmitting}>
-                            {isSubmitting ? (editId ? 'Updating...' : 'Posting...') : (editId ? 'Update' : 'Post')}
+                    <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
+                        <button type="button" onClick={() => { setIsModalOpen(false); setEditMode(false); }} className="px-5 py-2.5 text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 font-medium transition-colors">Cancel</button>
+                        <button type="submit" className="px-6 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 font-bold shadow-lg shadow-gray-200 transition-all hover:-translate-y-0.5">
+                            {editMode ? "Update Notice" : "Post Notice"}
                         </button>
                     </div>
                 </form>
             </Modal>
-
-
 
             {/* Confirmation Modal */}
             <ConfirmationModal
@@ -420,6 +293,6 @@ export default function NoticesPage() {
                 isDanger={confirmAction?.isDanger}
                 confirmText={confirmAction?.confirmText}
             />
-        </div >
+        </div>
     );
 }

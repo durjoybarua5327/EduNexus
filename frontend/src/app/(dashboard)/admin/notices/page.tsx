@@ -12,6 +12,8 @@ import { TagInput } from "@/components/TagInput";
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+
 export default function NoticesPage() {
     const { data: session } = useSession();
     // @ts-ignore
@@ -126,7 +128,7 @@ export default function NoticesPage() {
     };
 
     return (
-        <div className="p-6 space-y-8 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
+        <div className="p-6 mt-8 space-y-8 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
 
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-white to-orange-50/50 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm">
@@ -147,12 +149,7 @@ export default function NoticesPage() {
                 </button>
             </div>
 
-            {loading ? (
-                <div className="text-center py-20">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-                    <p className="text-gray-500 font-medium">Loading notices...</p>
-                </div>
-            ) : (
+            {loading ? <LoadingSpinner /> : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {notices.map(notice => (
                         <div key={notice.id} className={`p-6 rounded-3xl border transition-transform transition-shadow duration-300 will-change-transform group hover:-translate-y-1 hover:shadow-xl relative overflow-hidden flex flex-col ${notice.isPinned ? 'bg-orange-50/30 border-orange-100 shadow-orange-100/50' : 'bg-white border-gray-100 shadow-sm'}`}>

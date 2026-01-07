@@ -7,6 +7,8 @@ import { Modal } from "@/components/Modal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import toast from "react-hot-toast";
 
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+
 export default function FacultyPage() {
     const { data: session } = useSession();
     // @ts-ignore
@@ -135,7 +137,7 @@ export default function FacultyPage() {
     if (!deptId) return null;
 
     return (
-        <div className="p-6 space-y-8 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
+        <div className="p-6 mt-8 space-y-8 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
 
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-white to-indigo-50/50 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm relative overflow-hidden">
@@ -174,12 +176,7 @@ export default function FacultyPage() {
             </div>
 
             {/* List */}
-            {loading ? (
-                <div className="text-center py-20">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                    <p className="text-gray-500 font-medium">Loading faculty roster...</p>
-                </div>
-            ) : (
+            {loading ? <LoadingSpinner /> : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filtered.map(teacher => (
                         <div key={teacher.id} className={`bg-white rounded-2xl p-6 border transition-transform transition-shadow duration-300 will-change-transform group hover:-translate-y-1 hover:shadow-xl ${teacher.isBanned ? 'border-red-100 bg-red-50/10' : 'border-gray-100 hover:border-indigo-100 shadow-sm'}`}>

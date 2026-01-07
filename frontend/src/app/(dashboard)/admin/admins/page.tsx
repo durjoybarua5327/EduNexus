@@ -6,6 +6,7 @@ import { Plus, Shield, Trash2, Crown } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import toast from "react-hot-toast";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function DeptAdminsPage() {
     const { data: session } = useSession();
@@ -102,7 +103,7 @@ export default function DeptAdminsPage() {
     }
 
     return (
-        <div className="p-6 space-y-6 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
+        <div className="p-6 mt-8 space-y-6 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-white to-emerald-50/50 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm relative overflow-hidden">
                 <div className="flex items-center gap-4 relative z-10">
@@ -125,7 +126,7 @@ export default function DeptAdminsPage() {
                 <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl" />
             </div>
 
-            {loading ? <div className="text-center py-10">Loading...</div> : (
+            {loading ? <LoadingSpinner /> : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {admins.map(admin => (
                         <div key={admin.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center relative overflow-hidden group transition-transform transition-shadow duration-300 will-change-transform hover:-translate-y-1 hover:shadow-lg">

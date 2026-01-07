@@ -6,6 +6,7 @@ import { Plus, BookOpen, Trash2, Calendar, User, Clock, Image as ImageIcon } fro
 import { Modal } from "@/components/Modal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import toast from "react-hot-toast";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function AcademicsPage() {
     const { data: session } = useSession();
@@ -120,7 +121,10 @@ export default function AcademicsPage() {
                 setSelectedBatches([]);
                 setSelectedFile(null);
                 fetchRoutines(type);
-            } else toast.error("Failed to upload");
+            } else {
+                const data = await res.json();
+                toast.error(data.error || "Failed to upload");
+            }
         } catch (e) {
             console.error(e);
             toast.error("Error uploading file");
@@ -196,7 +200,7 @@ export default function AcademicsPage() {
     if (!deptId) return null;
 
     return (
-        <div className="p-6 space-y-6 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
+        <div className="p-6 mt-8 space-y-6 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
             {/* Header & Tabs Section */}
             <div className="space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-white to-blue-50/50 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm">
@@ -231,7 +235,7 @@ export default function AcademicsPage() {
                 </div>
             </div>
 
-            {loading ? <div className="text-center py-10">Loading...</div> : (
+            {loading ? <LoadingSpinner /> : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {routines.map(routine => (
                         <div key={routine.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-4 transition-transform transition-shadow duration-300 will-change-transform hover:-translate-y-1 hover:shadow-lg">

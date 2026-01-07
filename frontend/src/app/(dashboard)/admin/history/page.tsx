@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Activity, Search, Filter, ChevronLeft, ChevronRight, Clock, User, Shield } from "lucide-react";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function HistoryPage() {
     const { data: session } = useSession();
@@ -35,7 +36,7 @@ export default function HistoryPage() {
     }
 
     return (
-        <div className="max-w-[1600px] mx-auto p-6 space-y-8 animate-in fade-in duration-700 pb-20">
+        <div className="max-w-[1600px] mt-8 mx-auto p-6 space-y-8 animate-in fade-in duration-700 pb-20">
             {/* Header */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 p-8 text-white shadow-xl">
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -59,9 +60,7 @@ export default function HistoryPage() {
             {/* Content */}
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
                 {loading && logs.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
-                    </div>
+                    <LoadingSpinner />
                 ) : logs.length > 0 ? (
                     <div className="flex-1 overflow-x-auto">
                         <table className="w-full text-left">

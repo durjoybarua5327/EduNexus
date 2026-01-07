@@ -7,6 +7,8 @@ import { Modal } from "@/components/Modal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import toast from "react-hot-toast";
 
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+
 export default function BatchesPage() {
     const { data: session } = useSession();
     // @ts-ignore
@@ -50,17 +52,17 @@ export default function BatchesPage() {
             const res = await fetch("/api/dept/students", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...studentData, batchId: selectedBatch.id, departmentId: deptId }),
+                body: JSON.stringify({ ...studentData, batchId: selectedBatch.id, departmentId: deptId, role: 'CR' }),
             });
             if (res.ok) {
-                toast.success("Student added");
+                toast.success("CR Assigned Successfully");
                 setIsAddStudentOpen(false);
                 setStudentData({ name: "", email: "", password: "changeme123", studentIdNo: "" });
                 // Refresh student list
                 const listRes = await fetch(`/api/dept/students?batchId=${selectedBatch.id}`);
                 if (listRes.ok) setBatchStudents(await listRes.json());
             } else {
-                toast.error("Failed to add student");
+                toast.error("Failed to assign CR");
             }
         } catch (e) { toast.error("Error adding student"); }
     }
@@ -214,7 +216,7 @@ export default function BatchesPage() {
     if (!deptId) return null;
 
     return (
-        <div className="p-6 space-y-8 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
+        <div className="p-6 mt-8 space-y-8 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
 
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-indigo-50/50 to-white/80 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm relative overflow-hidden">
@@ -239,12 +241,7 @@ export default function BatchesPage() {
             </div>
 
 
-            {loading ? (
-                <div className="text-center py-20">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                    <p className="text-gray-500 font-medium">Loading batches...</p>
-                </div>
-            ) : (
+            {loading ? <LoadingSpinner /> : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {batches.map(batch => (
                         <div key={batch.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group hover:shadow-xl hover:-translate-y-1 transition-transform transition-shadow duration-300 will-change-transform relative overflow-hidden">
@@ -407,7 +404,7 @@ export default function BatchesPage() {
                         </div>
                         <div className="flex gap-3">
                             <button onClick={() => setIsAddStudentOpen(true)} className="text-xs flex items-center gap-1.5 text-indigo-700 hover:text-white font-bold bg-white hover:bg-indigo-600 px-4 py-2 rounded-lg border border-indigo-100 transition-all shadow-sm">
-                                <Plus className="w-3.5 h-3.5" /> Add Student
+                                <Plus className="w-3.5 h-3.5" /> Assign CR
                             </button>
                             <button onClick={handleSendCredentials} className="text-xs flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-bold bg-white hover:bg-gray-100 px-4 py-2 rounded-lg border border-gray-200 transition-all shadow-sm">
                                 <Mail className="w-3.5 h-3.5" /> Send Credentials
@@ -450,8 +447,11 @@ export default function BatchesPage() {
             </Modal>
 
             {/* Add Student Modal */}
-            <Modal isOpen={isAddStudentOpen} onClose={() => setIsAddStudentOpen(false)} title="Add Student Manually">
+            <Modal isOpen={isAddStudentOpen} onClose={() => setIsAddStudentOpen(false)} title="Assign Class Representative">
                 <form onSubmit={handleAddStudent} className="space-y-4">
+                    <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-sm mb-4">
+                        You are assigning a Class Representative (CR). CRs will be responsible for adding other students to this batch.
+                    </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                         <input className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300" required
@@ -477,7 +477,7 @@ export default function BatchesPage() {
                     </div>
                     <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-50">
                         <button type="button" onClick={() => setIsAddStudentOpen(false)} className="px-5 py-2.5 text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 font-medium transition-colors">Cancel</button>
-                        <button type="submit" className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5">Add Student</button>
+                        <button type="submit" className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5">Assign CR</button>
                     </div>
                 </form>
             </Modal>

@@ -66,7 +66,7 @@ export async function PUT(req: Request) {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, email, password, studentIdNo, batchId, departmentId } = body;
+        const { name, email, password, studentIdNo, batchId, departmentId, role } = body;
 
         if (!name || !email || !password || !batchId) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -76,35 +76,42 @@ export async function POST(req: Request) {
         await connection.beginTransaction();
 
         try {
-            // Create User
+            // Check if email exists
+            const [existing] = await connection.query<any[]>("SELECT id FROM User WHERE email = ?", [email]);
+            if (existing.length > 0) {
+                connection.release();
+                return NextResponse.json({ error: "Email already exists" }, { status: 409 });
+            }
+
             const hashedPassword = await bcrypt.hash(password, 10);
-            // Default role is STUDENT. Admin can promote to CR later.
-            const [res] = await connection.query<any>("INSERT INTO User (id, name, email, password, role, departmentId) VALUES (?, ?, ?, ?, ?, ?)",
-                [`user-${Date.now()}`, name, email, hashedPassword, 'STUDENT', departmentId]);
+            const userId = `usr-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-            const userId = `user-${Date.now()}`; // NOTE: This is a bug in my previous logic, I need the ID from the insert or generate it before.
-            // Actually, my seeding used `user-${Date.now()}` but usually we rely on auto-inc or UUID.
-            // Let's generate ID safely.
-        } catch (e) { throw e; } // Will fix in follow-up step to avoid complex replace logic issues
+            // Use provided role or default to STUDENT
+            const userRole = role === 'CR' ? 'CR' : 'STUDENT';
 
-        // Wait, I should implement the full POST correctly here.
-        // Let's use uuid or consistent ID generation.
-        const userId = `std-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            await connection.query(
+                "INSERT INTO User (id, name, email, password, role, departmentId) VALUES (?, ?, ?, ?, ?, ?)",
+                [userId, name, email, hashedPassword, userRole, departmentId]
+            );
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+            await connection.query(
+                "INSERT INTO StudentProfile (userId, batchId, studentIdNo) VALUES (?, ?, ?)",
+                [userId, batchId, studentIdNo || '']
+            );
 
-        await connection.query("INSERT INTO User (id, name, email, password, role, departmentId) VALUES (?, ?, ?, ?, 'STUDENT', ?)",
-            [userId, name, email, hashedPassword, departmentId]);
+            await connection.commit();
 
-        await connection.query("INSERT INTO StudentProfile (userId, batchId, studentIdNo) VALUES (?, ?, ?)",
-            [userId, batchId, studentIdNo || '']);
+            // Audit logic can be refined to detect who is acting, but for now we log system action or we can pass actorId
+            await logAudit('USER_CREATED', 'system', `Created ${userRole} ${name} in batch ${batchId}`, userId);
 
-        await connection.commit();
+            connection.release();
+            return NextResponse.json({ message: "Student created", id: userId }, { status: 201 });
 
-        await logAudit('USER_CREATED', 'system', `Created student ${name} in batch ${batchId}`, userId);
-
-        connection.release();
-        return NextResponse.json({ message: "Student created", id: userId }, { status: 201 });
+        } catch (e) {
+            await connection.rollback();
+            connection.release();
+            throw e;
+        }
 
     } catch (error: any) {
         console.error("Error creating student:", error);

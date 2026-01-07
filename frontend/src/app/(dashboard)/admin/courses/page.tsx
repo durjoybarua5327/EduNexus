@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Plus, BookOpen, Trash2, User, GraduationCap, Code } from "lucide-react";
+import { Plus, BookOpen, Trash2, User, GraduationCap, Code, Edit } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import toast from "react-hot-toast";
+
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function CoursesPage() {
     const { data: session } = useSession();
@@ -191,6 +193,17 @@ export default function CoursesPage() {
         });
     }
 
+    function handleEdit(course: any) {
+        setEditingCourse(course);
+        setCourseForm({
+            name: course.name,
+            code: course.code,
+            teacherId: course.teacherId || ""
+        });
+        setIsEditMode(true);
+        setIsCourseModalOpen(true);
+    }
+
     async function handleDeleteCourse(id: string) {
         setConfirmAction({
             title: "Delete Course",
@@ -214,7 +227,7 @@ export default function CoursesPage() {
     if (!deptId) return null;
 
     return (
-        <div className="p-6 space-y-6 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
+        <div className="p-6 mt-8 space-y-6 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-white to-indigo-50/50 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm relative overflow-hidden">
                 <div className="flex items-center gap-4 relative z-10">
@@ -246,7 +259,7 @@ export default function CoursesPage() {
                 <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl" />
             </div>
 
-            {loading ? <div className="text-center py-10">Loading...</div> : (
+            {loading ? <LoadingSpinner /> : (
                 <div className="grid grid-cols-12 gap-6">
                     {/* Semester Sidebar */}
                     <div className="col-span-12 md:col-span-3">
@@ -300,9 +313,14 @@ export default function CoursesPage() {
                                                     <Code className="w-3 h-3" />
                                                     {course.code}
                                                 </span>
-                                                <button onClick={() => handleDeleteCourse(course.id)} className="text-gray-300 hover:text-red-500 transition-colors">
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => handleEdit(course)} className="text-gray-300 hover:text-indigo-600 transition-colors">
+                                                        <Edit className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => handleDeleteCourse(course.id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                             </div>
                                             <h3 className="text-lg font-bold text-gray-900 mb-4">{course.name}</h3>
                                             <div className="pt-4 border-t border-gray-50 flex items-center gap-3">
@@ -373,7 +391,7 @@ export default function CoursesPage() {
                         <select className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                             value={courseForm.teacherId} onChange={e => setCourseForm({ ...courseForm, teacherId: e.target.value })}>
                             <option value="">No Instructor</option>
-                            {faculty.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                            {faculty.map(f => <option key={f.id} value={f.id}>{f.email} ({f.name})</option>)}
                         </select>
                     </div>
                     <div className="flex justify-end gap-3 mt-6">

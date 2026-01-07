@@ -74,38 +74,16 @@ export default function DepartmentAdminDashboard() {
 
     return (
         <div className="p-6 space-y-8 animate-in fade-in duration-700 pb-20">
-            {/* Welcome Banner */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-violet-600 p-10 text-white shadow-2xl shadow-indigo-200">
-                <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                    <div>
-                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-xs font-medium mb-3">
-                            <span className="w-2 h-2 rounded-full bg-green-400 mr-2 animate-pulse"></span>
-                            System Operational
-                        </div>
-                        <h1 className="text-4xl font-bold mb-3 tracking-tight">
-                            Welcome Back, <span className="text-indigo-200">{session?.user?.name?.split(' ')[0]}</span>! 👋
-                        </h1>
-                        <p className="text-indigo-100 text-lg max-w-xl leading-relaxed opacity-90">
-                            Here's what's happening in your department today. You have pending tasks in curriculum management.
-                        </p>
-                    </div>
-                </div>
 
-                {/* Decorative Blobs */}
-                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-gradient-to-br from-pink-500 to-orange-400 rounded-full blur-3xl opacity-30 mix-blend-overlay animate-pulse"></div>
-                <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-gradient-to-tr from-blue-500 to-teal-400 rounded-full blur-3xl opacity-30 mix-blend-overlay"></div>
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150"></div>
-            </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
                 <StatsCard
                     title="Faculty Members"
                     value={stats?.faculty || 0}
                     icon={GraduationCap}
                     color="text-purple-600"
                     bgColor="bg-purple-500/10"
-                    trend="+12% from last month"
                     delay="delay-0"
                 />
                 <StatsCard
@@ -114,7 +92,6 @@ export default function DepartmentAdminDashboard() {
                     icon={Users}
                     color="text-blue-600"
                     bgColor="bg-blue-500/10"
-                    trend="+5% new enrollments"
                     delay="delay-100"
                 />
                 <StatsCard
@@ -123,7 +100,6 @@ export default function DepartmentAdminDashboard() {
                     icon={Layers}
                     color="text-orange-600"
                     bgColor="bg-orange-500/10"
-                    trend="Operating normally"
                     delay="delay-200"
                 />
                 <StatsCard
@@ -132,7 +108,6 @@ export default function DepartmentAdminDashboard() {
                     icon={BookOpen}
                     color="text-pink-600"
                     bgColor="bg-pink-500/10"
-                    trend="2 courses expiring soon"
                     delay="delay-300"
                 />
             </div>
@@ -253,7 +228,7 @@ function StatsCard({ title, value, icon: Icon, color, bgColor, trend, delay }: a
                 {trend && (
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-100">
                         <TrendingUp className="w-3 h-3 mr-1" />
-                        {trend.includes('course') || trend.includes('batches') ? 'Active' : '+4.5%'}
+                        {trend}
                     </span>
                 )}
             </div>

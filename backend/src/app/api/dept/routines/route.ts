@@ -77,6 +77,21 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "No valid batches found" }, { status: 400 });
         }
 
+        // Check for duplicates
+        const placeholders = batchIds.map(() => '?').join(',');
+        const [existing] = await pool.query<any[]>(
+            `SELECT b.name FROM Routine r JOIN Batch b ON r.batchId = b.id WHERE r.type = ? AND r.batchId IN (${placeholders})`,
+            [type, ...batchIds]
+        );
+
+        if (existing.length > 0) {
+            // distinct names
+            const names = Array.from(new Set(existing.map(e => e.name))).join(', ');
+            return NextResponse.json({
+                error: `A ${type.toLowerCase()} already exists for: ${names}. Please delete the existing one first.`
+            }, { status: 409 });
+        }
+
         // Create a routine entry for each batch
         const timestamp = Date.now();
         for (let i = 0; i < batchIds.length; i++) {

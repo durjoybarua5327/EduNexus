@@ -8,6 +8,8 @@ import { ConfirmationModal } from "@/components/ConfirmationModal";
 import toast from "react-hot-toast";
 
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+// import { FixedSizeList } from "react-window"; 
+// Virtualization temporarily disabled due to build/runtime issues
 
 export default function BatchesPage() {
     const { data: session } = useSession();
@@ -45,26 +47,70 @@ export default function BatchesPage() {
         password: "changeme123", // Default recommendation
         studentIdNo: ""
     });
+    const [isEditStudentMode, setIsEditStudentMode] = useState(false);
+    const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
 
-    async function handleAddStudent(e: React.FormEvent) {
+    async function handleStudentSubmit(e: React.FormEvent) {
         e.preventDefault();
         try {
-            const res = await fetch("/api/dept/students", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...studentData, batchId: selectedBatch.id, departmentId: deptId, role: 'CR' }),
-            });
-            if (res.ok) {
-                toast.success("CR Assigned Successfully");
-                setIsAddStudentOpen(false);
-                setStudentData({ name: "", email: "", password: "changeme123", studentIdNo: "" });
-                // Refresh student list
-                const listRes = await fetch(`/api/dept/students?batchId=${selectedBatch.id}`);
-                if (listRes.ok) setBatchStudents(await listRes.json());
+            if (isEditStudentMode && editingStudentId) {
+                // Update Logic
+                const res = await fetch("/api/dept/students", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        studentId: editingStudentId,
+                        action: 'UPDATE_INFO',
+                        departmentId: deptId,
+                        name: studentData.name,
+                        password: studentData.password === "changeme123" ? "" : studentData.password, // Only send if changed from default/placeholder
+                        studentIdNo: studentData.studentIdNo
+                    }),
+                });
+
+                if (res.ok) {
+                    toast.success("Student updated successfully");
+                    setIsAddStudentOpen(false);
+                    setStudentData({ name: "", email: "", password: "changeme123", studentIdNo: "" });
+                    setIsEditStudentMode(false);
+                    setEditingStudentId(null);
+                    // Refresh student list
+                    const listRes = await fetch(`/api/dept/students?batchId=${selectedBatch.id}`);
+                    if (listRes.ok) setBatchStudents(await listRes.json());
+                } else {
+                    toast.error("Failed to update student");
+                }
             } else {
-                toast.error("Failed to assign CR");
+                // Create Logic (Assign CR)
+                const res = await fetch("/api/dept/students", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ...studentData, batchId: selectedBatch.id, departmentId: deptId, role: 'CR' }),
+                });
+                if (res.ok) {
+                    toast.success("CR Assigned Successfully");
+                    setIsAddStudentOpen(false);
+                    setStudentData({ name: "", email: "", password: "changeme123", studentIdNo: "" });
+                    // Refresh student list
+                    const listRes = await fetch(`/api/dept/students?batchId=${selectedBatch.id}`);
+                    if (listRes.ok) setBatchStudents(await listRes.json());
+                } else {
+                    toast.error("Failed to assign CR");
+                }
             }
-        } catch (e) { toast.error("Error adding student"); }
+        } catch (e) { toast.error("Error submitting student form"); }
+    }
+
+    function openEditStudent(student: any) {
+        setStudentData({
+            name: student.name,
+            email: student.email,
+            password: "", // Leave empty to indicate no change unless typed
+            studentIdNo: student.studentIdNo || ""
+        });
+        setEditingStudentId(student.id);
+        setIsEditStudentMode(true);
+        setIsAddStudentOpen(true);
     }
 
     useEffect(() => {
@@ -403,7 +449,7 @@ export default function BatchesPage() {
                             <p className="text-sm font-semibold text-gray-700">{batchStudents.length} Students Enrolled</p>
                         </div>
                         <div className="flex gap-3">
-                            <button onClick={() => setIsAddStudentOpen(true)} className="text-xs flex items-center gap-1.5 text-indigo-700 hover:text-white font-bold bg-white hover:bg-indigo-600 px-4 py-2 rounded-lg border border-indigo-100 transition-all shadow-sm">
+                            <button onClick={() => { setIsEditStudentMode(false); setStudentData({ name: "", email: "", password: "changeme123", studentIdNo: "" }); setIsAddStudentOpen(true); }} className="text-xs flex items-center gap-1.5 text-indigo-700 hover:text-white font-bold bg-white hover:bg-indigo-600 px-4 py-2 rounded-lg border border-indigo-100 transition-all shadow-sm">
                                 <Plus className="w-3.5 h-3.5" /> Assign CR
                             </button>
                             <button onClick={handleSendCredentials} className="text-xs flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-bold bg-white hover:bg-gray-100 px-4 py-2 rounded-lg border border-gray-200 transition-all shadow-sm">
@@ -438,6 +484,9 @@ export default function BatchesPage() {
                                             <Shield className="w-4 h-4" />
                                         </button>
                                     )}
+                                    <button onClick={() => openEditStudent(student)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors ml-1" title="Edit Student">
+                                        <Edit3 className="w-4 h-4" />
+                                    </button>
                                 </div>
                             ))}
                             {batchStudents.length === 0 && <p className="col-span-full text-center text-gray-400 py-12 italic border border-dashed border-gray-200 rounded-xl bg-gray-50">No students found in this batch.</p>}
@@ -446,12 +495,15 @@ export default function BatchesPage() {
                 </div>
             </Modal>
 
-            {/* Add Student Modal */}
-            <Modal isOpen={isAddStudentOpen} onClose={() => setIsAddStudentOpen(false)} title="Assign Class Representative">
-                <form onSubmit={handleAddStudent} className="space-y-4">
-                    <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-sm mb-4">
-                        You are assigning a Class Representative (CR). CRs will be responsible for adding other students to this batch.
-                    </div>
+            {/* Add/Edit Student Modal */}
+            <Modal isOpen={isAddStudentOpen} onClose={() => setIsAddStudentOpen(false)}
+                title={isEditStudentMode ? "Update Student Details" : "Assign Class Representative"}>
+                <form onSubmit={handleStudentSubmit} className="space-y-4">
+                    {!isEditStudentMode && (
+                        <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-sm mb-4">
+                            You are assigning a Class Representative (CR). CRs will be responsible for adding other students to this batch.
+                        </div>
+                    )}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                         <input className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300" required
@@ -460,13 +512,15 @@ export default function BatchesPage() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300" required
+                        <input type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300" required={!isEditStudentMode}
                             placeholder="student@example.com"
+                            disabled={isEditStudentMode} // Email usually immutable or needs special handling
                             value={studentData.email} onChange={e => setStudentData({ ...studentData, email: e.target.value })} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                        <input type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300" required minLength={6}
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Password {isEditStudentMode && <span className="text-gray-400 font-normal">(Leave blank to keep current)</span>}</label>
+                        <input type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300" required={!isEditStudentMode} minLength={6}
+                            placeholder={isEditStudentMode ? "New Password (Optional)" : "Password"}
                             value={studentData.password} onChange={e => setStudentData({ ...studentData, password: e.target.value })} />
                     </div>
                     <div>
@@ -477,10 +531,13 @@ export default function BatchesPage() {
                     </div>
                     <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-50">
                         <button type="button" onClick={() => setIsAddStudentOpen(false)} className="px-5 py-2.5 text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 font-medium transition-colors">Cancel</button>
-                        <button type="submit" className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5">Assign CR</button>
+                        <button type="submit" className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5">
+                            {isEditStudentMode ? "Update Student" : "Assign CR"}
+                        </button>
                     </div>
                 </form>
             </Modal>
+
             {/* Confirmation Modal */}
             <ConfirmationModal
                 isOpen={!!confirmAction}
@@ -491,6 +548,7 @@ export default function BatchesPage() {
                 isDanger={confirmAction?.isDanger}
                 confirmText={confirmAction?.confirmText}
             />
-        </div >
+        </div>
     );
 }
+

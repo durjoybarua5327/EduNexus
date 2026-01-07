@@ -31,10 +31,52 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
     try {
         const body = await req.json();
-        const { studentId, action, departmentId } = body;
-        // action: 'PROMOTE' | 'REVOKE'
+        const { studentId, action, departmentId, name, password, studentIdNo } = body;
+        // action: 'PROMOTE' | 'REVOKE' | 'UPDATE_INFO'
 
         if (!studentId || !action) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+
+        if (action === 'UPDATE_INFO') {
+            const connection = await pool.getConnection();
+            await connection.beginTransaction();
+
+            try {
+                // Update User table
+                let userUpdateQuery = "UPDATE User SET name = ?";
+                const userUpdateParams: any[] = [name];
+
+                if (password && password.trim() !== "") {
+                    const hashedPassword = await bcrypt.hash(password, 10);
+                    userUpdateQuery += ", password = ?";
+                    userUpdateParams.push(hashedPassword);
+                }
+
+                userUpdateQuery += " WHERE id = ?";
+                userUpdateParams.push(studentId);
+
+                await connection.query(userUpdateQuery, userUpdateParams);
+
+                // Update StudentProfile table
+                if (studentIdNo) {
+                    await connection.query(
+                        "UPDATE StudentProfile SET studentIdNo = ? WHERE userId = ?",
+                        [studentIdNo, studentId]
+                    );
+                }
+
+                await connection.commit();
+
+                await logAudit('USER_UPDATED', 'system', `Updated details for ${studentId} in dept ${departmentId}`, studentId);
+
+                connection.release();
+                return NextResponse.json({ message: "Student details updated" });
+
+            } catch (error) {
+                await connection.rollback();
+                connection.release();
+                throw error;
+            }
+        }
 
         if (action === 'PROMOTE') {
             // Check limit

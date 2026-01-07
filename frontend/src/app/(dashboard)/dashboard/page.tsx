@@ -1,33 +1,44 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
+"use client";
 
-export default async function DashboardPage() {
-    const session = await auth();
-    console.log("Dashboard Session Check:", JSON.stringify(session, null, 2));
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-    if (!session?.user) {
-        redirect("/login");
-    }
+export default function DashboardPage() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
 
-    const role = session.user.role;
-    console.log("Redirecting based on role:", role);
+    useEffect(() => {
+        let targetPath = null;
+        if (status === "unauthenticated") {
+            targetPath = "/login";
+        } else if (status === "authenticated" && session?.user) {
+            // @ts-ignore
+            const role = session.user.role;
 
-    if (role === 'STUDENT') redirect("/dashboard/semester");
-    if (role === 'TEACHER') redirect("/teacher/courses");
-    if (role === 'DEPT_ADMIN') redirect("/admin/overview");
-    if (role === 'SUPER_ADMIN') redirect("/superadmin");
+            if (role === 'STUDENT') targetPath = "/dashboard/semester";
+            else if (role === 'TEACHER') targetPath = "/teacher/courses";
+            else if (role === 'DEPT_ADMIN') targetPath = "/admin/overview";
+            else if (role === 'SUPER_ADMIN') targetPath = "/superadmin";
+            else targetPath = "/login"; // Fallback
+        }
 
-    // Fallback
+        if (targetPath) {
+            router.replace(targetPath);
+
+            // Fallback: Force reload if stuck
+            const timeout = setTimeout(() => {
+                window.location.href = targetPath!;
+            }, 1000);
+            return () => clearTimeout(timeout);
+        }
+    }, [session, status, router]);
+
+    // Simple centered spinner, no text
     return (
-        <div className="p-10 flex flex-col items-center justify-center min-h-screen bg-gray-50">
-            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                <h1 className="text-2xl font-bold text-red-600 mb-4">Dashboard Redirect Failed</h1>
-                <p className="text-gray-700 mb-2">Welcome, <span className="font-semibold">{session.user.name}</span></p>
-                <p className="text-gray-700">Your role is: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{role || 'UNDEFINED'}</span></p>
-                <p className="mt-4 text-sm text-gray-500">Please contact support or try logging out.</p>
-                <form action={async () => { 'use server'; await import('@/auth').then(m => m.signOut()); }}>
-                    <button className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Sign Out</button>
-                </form>
+        <div className="flex h-screen items-center justify-center bg-gray-50">
+            <div className="relative">
+                <div className="h-16 w-16 rounded-full border-b-2 border-t-2 border-indigo-500 animate-spin"></div>
             </div>
         </div>
     );

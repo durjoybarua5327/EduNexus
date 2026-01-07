@@ -77,12 +77,21 @@ export function Navbar({ user, links = [], onMenuClick }: NavbarProps) {
                             <span className="sr-only">Open sidebar</span>
                             <Menu className="w-6 h-6" />
                         </button>
-                        <Link href="/dashboard" className="flex items-center gap-3 group relative">
-                            <div className="absolute -inset-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
-                            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200 group-hover:scale-105 transition-transform duration-300">
-                                <span className="text-xl">E</span>
+                        <Link
+                            href={
+                                user?.role === 'SUPER_ADMIN' ? '/superadmin/overview' :
+                                    user?.role === 'DEPT_ADMIN' ? '/admin/overview' :
+                                        user?.role === 'TEACHER' ? '/teacher/courses' :
+                                            user?.role === 'STUDENT' || user?.role === 'CR' ? '/dashboard/semester' :
+                                                '/dashboard'
+                            }
+                            className="flex items-center gap-0.5 group relative pl-2 active:scale-95 transition-transform duration-100"
+                        >
+                            <div className="absolute -inset-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg blur opacity-0 group-active:opacity-50 transition duration-200"></div>
+                            <div className="relative w-14 h-14 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                                <img src="/logo.png" alt="EduNexus Logo" className="w-full h-full object-contain" />
                             </div>
-                            <span className="self-center text-xl font-bold whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 tracking-tight pl-1">
+                            <span className="self-center text-xl font-bold whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 group-active:from-blue-700 group-active:to-cyan-700 transition-all duration-200 tracking-tight pl-1">
                                 EduNexus
                             </span>
                         </Link>
@@ -164,6 +173,6 @@ export function Navbar({ user, links = [], onMenuClick }: NavbarProps) {
                     </div>
                 </div>
             </div>
-        </nav>
+        </nav >
     );
 }

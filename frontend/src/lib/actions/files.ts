@@ -1,3 +1,4 @@
+
 "use server";
 
 import { auth } from "@/auth";
@@ -8,12 +9,12 @@ export async function createFolder(formData: FormData) {
     const parentId = formData.get('parentId') as string;
     const name = formData.get('name') as string;
     const isPublic = formData.get('isPublic') === 'on';
+    const path = formData.get('path') as string; // Dynamic path for revalidation
 
     const session = await auth();
-    // In real app pass token
 
     try {
-        const res = await fetch('http://localhost:3001/api/files', {
+        const res = await fetchAPI('/files', {
             method: 'POST',
             body: JSON.stringify({
                 type: 'folder',
@@ -21,54 +22,51 @@ export async function createFolder(formData: FormData) {
                 parentId,
                 isPublic,
                 ownerId: session?.user?.id
-            }),
-            headers: { 'Content-Type': 'application/json' }
+            })
         });
 
-        const data = await res.json();
-        revalidatePath('/dashboard/semester');
-        return data;
+        if (res.error) return { error: res.error };
+
+        revalidatePath(path || '/student/profile');
+        return res;
     } catch (e) {
         return { error: "Connection Failed" };
     }
 }
 
 export async function uploadFile(formData: FormData) {
-    // Handling file upload in BFF is tricky with JSON body.
-    // Ideally we stream the file to backend or use FormData if Backend accepts it.
-    // Our Backend API implementation for 'files' accepts JSON in 'POST' - wait, I implemented it to read JSON!
-    // But files are binary.
-    // My backend implementation: `const data = await req.json();`
-    // So I need to send JSON. Since it's a dummy text-only "upload", I can just send metadata.
-
     const folderId = formData.get('folderId') as string;
     const file = formData.get('file') as File;
+    const path = formData.get('path') as string;
 
     try {
-        const res = await fetch('http://localhost:3001/api/files', {
+        const res = await fetchAPI('/files', {
             method: 'POST',
             body: JSON.stringify({
                 type: 'file',
                 name: file.name,
                 folderId,
                 fileType: file.type,
-                fileSize: file.size
-            }),
-            headers: { 'Content-Type': 'application/json' }
+                fileSize: file.size,
+                url: URL.createObjectURL(file) // Mock URL for now
+            })
         });
 
-        const data = await res.json();
-        revalidatePath('/dashboard/semester');
-        return data;
+        if (res.error) return { error: res.error };
+
+        revalidatePath(path || '/student/profile');
+        return res;
     } catch (e) {
         return { error: "Upload Connection Failed" };
     }
 }
 
-export async function getFolderContents(folderId: string | null) {
-    // This is a server action used by server component, or just a helper?
-    // In Server Component we can just call fetchAPI directly.
-    // But if we want to reuse logic:
-    const query = folderId ? `?folderId=${folderId}` : '?folderId=null';
-    return await fetchAPI(`/files${query}`);
+export async function getFolderContents(parentId: string | null, ownerId?: string, courseId?: string) {
+    const params = new URLSearchParams();
+    if (parentId) params.append('parentId', parentId);
+    if (ownerId) params.append('ownerId', ownerId);
+    if (courseId) params.append('courseId', courseId);
+
+    return await fetchAPI(`/files?${params.toString()}`);
 }
+

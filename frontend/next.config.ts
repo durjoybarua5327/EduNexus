@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+// Trigger restart for env load
+
 const nextConfig: NextConfig = {
   async rewrites() {
     return [

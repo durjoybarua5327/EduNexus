@@ -3,17 +3,28 @@ import { auth } from "@/auth";
 const BACKEND_URL = "http://localhost:3001/api";
 
 export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
-    // In a real app we'd attach a token here
-    // const session = await auth();
-    // const token = session?.user?.accessToken; // If we had one
+    let headersConfig: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(options.headers as Record<string, string>),
+    };
+
+    // Server-side: Forward cookies manually
+    if (typeof window === 'undefined') {
+        try {
+            const { headers } = await import("next/headers");
+            const headersList = await headers();
+            const cookieHeader = headersList.get('cookie');
+            if (cookieHeader) {
+                headersConfig['Cookie'] = cookieHeader;
+            }
+        } catch (error) {
+            console.warn("Could not load next/headers in fetchAPI", error);
+        }
+    }
 
     const res = await fetch(`${BACKEND_URL}${endpoint}`, {
         ...options,
-        headers: {
-            "Content-Type": "application/json",
-            ...options.headers,
-            // "Authorization": `Bearer ${token}`
-        },
+        headers: headersConfig,
         cache: options.cache || 'no-store' // Default to no-store for dynamic data
     });
 
@@ -25,4 +36,13 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     }
 
     return res.json();
+}
+
+export async function getStudentProfile() {
+    return await fetchAPI('/student/profile');
+}
+
+export async function getStudentCourses(departmentId: string, semesterId: string) {
+    if (!departmentId || !semesterId) return [];
+    return await fetchAPI(`/dept/courses?departmentId=${departmentId}&semesterId=${semesterId}`, { cache: 'no-store' }) || [];
 }

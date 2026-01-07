@@ -12,20 +12,28 @@ interface FolderBrowserProps {
     files: any[];
     breadcrumbs: any[];
     currentFolderId: string | null;
+    basePath: string;
+    allowUploads?: boolean;
+    showPrivacy?: boolean;
 }
 
-export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId }: FolderBrowserProps) {
+export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId, basePath, allowUploads = false, showPrivacy = false }: FolderBrowserProps) {
     const router = useRouter();
+
+    const getHref = (id: string) => {
+        const separator = basePath.includes('?') ? '&' : '?';
+        return `${basePath}${separator}folderId=${id}`;
+    }
 
     return (
         <div className="space-y-6">
             {/* Breadcrumbs */}
             <nav className="flex items-center text-sm text-gray-500">
-                <Link href="/dashboard/semester" className="hover:text-gray-900">Home</Link>
+                <Link href={basePath} className="hover:text-gray-900">Home</Link>
                 {breadcrumbs.map((crumb) => (
                     <div key={crumb.id} className="flex items-center">
                         <ChevronRight size={16} className="mx-1" />
-                        <Link href={`/dashboard/semester?folderId=${crumb.id}`} className="hover:text-gray-900 font-medium text-gray-900">
+                        <Link href={getHref(crumb.id)} className="hover:text-gray-900 font-medium text-gray-900">
                             {crumb.name}
                         </Link>
                     </div>
@@ -38,8 +46,12 @@ export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId }: 
                     {breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1].name : "My Semester"}
                 </h2>
                 <div className="flex gap-2">
-                    <CreateFolderModal parentId={currentFolderId} />
-                    <UploadFileModal folderId={currentFolderId} />
+                    {allowUploads && (
+                        <>
+                            <CreateFolderModal parentId={currentFolderId} showPrivacy={showPrivacy} />
+                            <UploadFileModal folderId={currentFolderId} />
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -48,9 +60,14 @@ export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId }: 
                 {folders.map((folder) => (
                     <Link
                         key={folder.id}
-                        href={`/dashboard/semester?folderId=${folder.id}`}
+                        href={getHref(folder.id)}
                         className="group relative flex flex-col items-center justify-center p-6 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition cursor-pointer"
                     >
+                        {showPrivacy && (
+                            <div className={`absolute top-2 left-2 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${folder.isPublic ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                {folder.isPublic ? 'Public' : 'Private'}
+                            </div>
+                        )}
                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
                             <MoreVertical size={16} className="text-gray-400 hover:text-gray-600" />
                         </div>
@@ -81,6 +98,6 @@ export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId }: 
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 }

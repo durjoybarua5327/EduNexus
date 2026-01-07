@@ -12,12 +12,21 @@ export function DashboardShell({ children, user }: { children: React.ReactNode, 
     const getLinks = (role?: string) => {
         switch (role) {
             case "STUDENT":
+                return [
+                    { name: "Home", href: "/student/home" },
+                    { name: "Routine", href: "/student/routine" },
+                    { name: "Batch", href: "/student/batch" },
+                    { name: "Resources", href: "/student/resources" },
+                    { name: "Profile", href: "/student/profile" },
+                ];
             case "CR":
                 return [
-                    { name: "My Semester", href: "/dashboard/semester" },
-                    { name: "Routine", href: "/dashboard/routine" },
-                    { name: "Notices", href: "/dashboard/notices" },
-                    { name: "Resources", href: "/dashboard/resources" },
+                    { name: "Home", href: "/student/home" },
+                    { name: "Routine", href: "/student/routine" },
+                    { name: "Batch", href: "/student/batch" },
+                    { name: "Resources", href: "/student/resources" },
+                    { name: "Profile", href: "/student/profile" },
+                    { name: "Class Notice", href: "/student/class-management" },
                 ];
             case "TEACHER":
                 return [
@@ -62,7 +71,7 @@ export function DashboardShell({ children, user }: { children: React.ReactNode, 
             <Navbar user={user} links={links} />
 
             {/* Main Content - Removed sidebar margin (sm:ml-64) */}
-            <main className="p-4 pt-20 h-full min-h-screen container mx-auto">
+            <main className="p-6 pt-32 h-full min-h-screen container mx-auto">
                 {children}
             </main>
         </div>

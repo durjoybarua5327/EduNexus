@@ -17,6 +17,7 @@ export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
         const departmentId = searchParams.get("departmentId");
+        const batchId = searchParams.get("batchId"); // Optional filter
         const type = searchParams.get("type"); // Optional filter
 
         if (!departmentId) {
@@ -34,6 +35,11 @@ export async function GET(req: Request) {
         if (type) {
             query += ` AND r.type = ?`;
             params.push(type);
+        }
+
+        if (batchId) {
+            query += ` AND r.batchId = ?`;
+            params.push(batchId);
         }
 
         query += ` ORDER BY r.createdAt DESC`;

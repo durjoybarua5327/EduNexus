@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+    Home,
     LayoutDashboard,
     Folder,
     BookOpen,
     Settings,
+    User,
     Users,
     FileText,
     Calendar,
@@ -28,10 +30,11 @@ export function Sidebar({ isOpen, role }: SidebarProps) {
             case "STUDENT":
             case "CR":
                 return [
-                    { name: "My Semester", href: "/dashboard/semester", icon: Folder },
-                    { name: "Routine", href: "/dashboard/routine", icon: Calendar },
-                    { name: "Notices", href: "/dashboard/notices", icon: FileText },
-                    { name: "Resources", href: "/dashboard/resources", icon: BookOpen },
+                    { name: "Home", href: "/student/home", icon: Home },
+                    { name: "Routine", href: "/student/routine", icon: Calendar },
+                    { name: "My Batch", href: "/student/batch", icon: Users },
+                    { name: "Resources", href: "/student/resources", icon: BookOpen },
+                    { name: "Profile", href: "/student/profile", icon: User },
                 ];
             case "TEACHER":
                 return [

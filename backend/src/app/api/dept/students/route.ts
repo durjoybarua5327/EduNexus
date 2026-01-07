@@ -13,15 +13,26 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: "Batch ID required" }, { status: 400 });
         }
 
+        // Fetch Students
         const [students] = await pool.query<any[]>(`
-            SELECT u.id, u.name, u.email, u.role, sp.studentIdNo
+            SELECT u.id, u.name, u.email, u.role, u.image, sp.studentIdNo
             FROM User u
             JOIN StudentProfile sp ON u.id = sp.userId
             WHERE sp.batchId = ? AND (u.role = 'STUDENT' OR u.role = 'CR')
             ORDER BY u.name ASC
         `, [batchId]);
 
-        return NextResponse.json(students);
+        // Fetch Teachers (linked via Courses -> Semester -> Batch)
+        const [teachers] = await pool.query<any[]>(`
+            SELECT DISTINCT u.id, u.name, u.email, u.role, u.image, 'Teacher' as studentIdNo
+            FROM User u
+            JOIN Course c ON u.id = c.teacherId
+            JOIN Semester s ON c.semesterId = s.id
+            JOIN Batch b ON s.id = (SELECT s2.id FROM Semester s2 WHERE s2.name = b.currentSemester AND s2.departmentId = b.departmentId)
+            WHERE b.id = ? AND u.role = 'TEACHER'
+        `, [batchId]);
+
+        return NextResponse.json([...teachers, ...students]);
     } catch (error) {
         console.error("Error fetching students:", error);
         return NextResponse.json({ error: "Failed to fetch students" }, { status: 500 });

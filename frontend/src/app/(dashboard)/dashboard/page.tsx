@@ -16,7 +16,7 @@ export default function DashboardPage() {
             // @ts-ignore
             const role = session.user.role;
 
-            if (role === 'STUDENT') targetPath = "/dashboard/semester";
+            if (role === 'STUDENT') targetPath = "/student/home";
             else if (role === 'TEACHER') targetPath = "/teacher/courses";
             else if (role === 'DEPT_ADMIN') targetPath = "/admin/overview";
             else if (role === 'SUPER_ADMIN') targetPath = "/superadmin";

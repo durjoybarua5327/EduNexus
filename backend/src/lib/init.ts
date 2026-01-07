@@ -308,6 +308,20 @@ export async function initDatabase() {
     // Seed Super Admin if not exists
     // Seed Super Admin if not exists
     const targetEmail = 'durjoybarua8115@gmail.com';
+    const systemId = 'system';
+
+    // Seed System User
+    const [existingSystem] = await db.query<any[]>('SELECT * FROM User WHERE id = ?', [systemId]);
+    if (existingSystem.length === 0) {
+      console.log('Seeding System User...');
+      const hashedPassword = await bcrypt.hash('system-password-should-be-long', 10);
+      await db.query(
+        'INSERT INTO User (id, name, email, password, role, isBanned) VALUES (?, ?, ?, ?, ?, ?)',
+        [systemId, 'System', 'system@edunexus.local', hashedPassword, 'SUPER_ADMIN', false]
+      );
+      console.log('✅ System User created');
+    }
+
     const [existingAdmin] = await db.query<any[]>('SELECT * FROM User WHERE email = ?', [targetEmail]);
 
     if (existingAdmin.length === 0) {

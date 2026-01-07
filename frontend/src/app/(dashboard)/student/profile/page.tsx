@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-export default async function ProfilePage({ searchParams }: { searchParams: { folderId?: string } }) {
+export default async function ProfilePage(props: { searchParams: Promise<{ folderId?: string }> }) {
+    const searchParams = await props.searchParams;
     const session = await auth();
     const user = session?.user;
 

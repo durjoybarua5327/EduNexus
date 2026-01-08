@@ -8,17 +8,36 @@ import {
     TrendingUp, Award
 } from "lucide-react";
 import Image from "next/image";
+import { ProfileEditButton } from "@/components/ProfileEditButton";
 
-export default async function ProfilePage(props: { searchParams: Promise<{ folderId?: string }> }) {
+export default async function ProfilePage(props: { searchParams: Promise<{ folderId?: string; userId?: string; user?: string }> }) {
     const searchParams = await props.searchParams;
     const session = await auth();
     const user = session?.user;
 
     if (!user) return <div className="p-8 text-center text-red-500 font-semibold">Please log in to view your profile.</div>;
 
-    const profile = await getStudentProfile();
+    const queryUserId = searchParams?.userId || searchParams?.user; // Handle both just in case, though we use userId
+    // If viewing another user, fetch THEIR profile.
+    const profile = await getStudentProfile(queryUserId || undefined);
 
-    // Fetch Courses for Stats
+    // If fetch failed or user not found
+    if (!profile) {
+        return <div className="p-8 text-center text-slate-500 font-semibold">Student profile not found.</div>;
+    }
+
+    // Determine if we are viewing our own profile
+    const isOwnProfile = !queryUserId || queryUserId === user.id;
+
+    // Use profile data for display (it contains name, email, image etc from the API now)
+    const displayUser = {
+        name: profile.name,
+        email: profile.email,
+        image: profile.image,
+        role: profile.role
+    };
+
+    // Fetch Courses for Stats (using profile's department and semester)
     const courses = await getStudentCourses(profile?.departmentId || '', profile?.semesterId || '');
 
     // Stats Data with Enhanced Visuals
@@ -79,8 +98,8 @@ export default async function ProfilePage(props: { searchParams: Promise<{ folde
                     <div className="relative shrink-0">
                         <div className="w-40 h-40 rounded-full p-1.5 bg-gradient-to-br from-indigo-200 to-purple-200 shadow-xl">
                             <div className="w-full h-full rounded-full overflow-hidden border-4 border-white bg-white relative">
-                                {user.image ? (
-                                    <img src={user.image} alt="Profile" className="w-full h-full object-cover" />
+                                {displayUser.image ? (
+                                    <img src={displayUser.image} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center bg-slate-50">
                                         <User className="w-20 h-20 text-slate-300" />
@@ -97,9 +116,9 @@ export default async function ProfilePage(props: { searchParams: Promise<{ folde
                     <div className="flex-1 text-center md:text-left space-y-4 relative z-10">
                         <div>
                             <h1 className="text-4xl md:text-5xl font-extrabold text-slate-800 tracking-tight mb-2">
-                                {user.name}
+                                {displayUser.name}
                             </h1>
-                            <p className="text-lg text-slate-500 font-medium">{user.email}</p>
+                            <p className="text-lg text-slate-500 font-medium">{displayUser.email}</p>
                         </div>
 
                         <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-4">
@@ -112,6 +131,15 @@ export default async function ProfilePage(props: { searchParams: Promise<{ folde
                             <Badge color="bg-cyan-50 text-cyan-700 border-cyan-100">
                                 ID: {profile?.studentIdNo || "N/A"}
                             </Badge>
+                            {!isOwnProfile && (
+                                <Badge color="bg-slate-100 text-slate-600 border-slate-200">
+                                    View Only
+                                </Badge>
+                            )}
+
+                            <div className="md:ml-auto">
+                                <ProfileEditButton currentName={displayUser.name} isOwnProfile={isOwnProfile} />
+                            </div>
                         </div>
                     </div>
 
@@ -156,30 +184,32 @@ export default async function ProfilePage(props: { searchParams: Promise<{ folde
                 ))}
             </div>
 
-            {/* Personal Cloud Section */}
-            <div className="pt-4">
-                <div className="flex items-center gap-4 mb-6 px-2">
-                    <div className="p-3 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-200">
-                        <HardDrive className="w-6 h-6 text-white" />
+            {/* Personal Cloud Section - Only visible to owner */}
+            {isOwnProfile && (
+                <div className="pt-4">
+                    <div className="flex items-center gap-4 mb-6 px-2">
+                        <div className="p-3 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-200">
+                            <HardDrive className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Personal Cloud</h2>
+                            <p className="text-slate-500 font-medium">Secure storage for your assignments and resources.</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Personal Cloud</h2>
-                        <p className="text-slate-500 font-medium">Secure storage for your assignments and resources.</p>
-                    </div>
-                </div>
 
-                <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-8 border border-white/60 shadow-xl shadow-indigo-100/20">
-                    <FolderBrowser
-                        folders={folders || []}
-                        files={files || []}
-                        breadcrumbs={breadcrumbs}
-                        currentFolderId={folderId}
-                        basePath="/student/profile"
-                        allowUploads={true}
-                        showPrivacy={true}
-                    />
+                    <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-8 border border-white/60 shadow-xl shadow-indigo-100/20">
+                        <FolderBrowser
+                            folders={folders || []}
+                            files={files || []}
+                            breadcrumbs={breadcrumbs}
+                            currentFolderId={folderId}
+                            basePath="/student/profile"
+                            allowUploads={true}
+                            showPrivacy={true}
+                        />
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

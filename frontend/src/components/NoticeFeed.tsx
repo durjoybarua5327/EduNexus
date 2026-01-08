@@ -1,12 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Calendar, Megaphone, Pin, Tag, X, Clock, ArrowRight, Sparkles } from "lucide-react";
+import { Bell, Calendar, Megaphone, Pin, Tag, X, Clock, ArrowRight, Sparkles, Search, Filter } from "lucide-react";
 import parse from 'html-react-parser';
 
 export function NoticeFeed({ notices }: { notices: any[] }) {
     const [selectedNotice, setSelectedNotice] = useState<any | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [sortOrder, setSortOrder] = useState("newest");
+
+    const filteredNotices = useMemo(() => {
+        return notices.filter(notice => {
+            const matchesSearch = notice.title.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesSearch;
+        });
+    }, [notices, searchQuery]);
+
+    const filteredAndSortedNotices = useMemo(() => {
+        return [...filteredNotices].sort((a, b) => {
+            return sortOrder === "newest"
+                ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
+    }, [filteredNotices, sortOrder]);
 
     useEffect(() => {
         if (selectedNotice) {
@@ -22,6 +39,34 @@ export function NoticeFeed({ notices }: { notices: any[] }) {
 
     return (
         <>
+            {/* Search and Filter Section */}
+            <div className="flex flex-col md:flex-row gap-4 mb-8">
+                <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="Search notices by title..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all text-slate-900 bg-white shadow-sm placeholder:text-slate-400"
+                    />
+                </div>
+                <div className="flex gap-1.5 p-1.5 bg-white rounded-2xl border border-slate-200 shadow-sm shrink-0">
+                    {['newest', 'oldest'].map((order) => (
+                        <button
+                            key={order}
+                            onClick={() => setSortOrder(order)}
+                            className={`px-5 py-2.5 rounded-xl text-xs font-black tracking-wide transition-all ${sortOrder === order
+                                ? 'bg-violet-600 text-white shadow-md shadow-violet-200'
+                                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                                }`}
+                        >
+                            {order === 'newest' ? 'NEWEST' : 'OLDEST'}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             <motion.div
                 className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
                 initial="hidden"
@@ -30,84 +75,97 @@ export function NoticeFeed({ notices }: { notices: any[] }) {
                     visible: { transition: { staggerChildren: 0.08 } }
                 }}
             >
-                {notices.map((notice) => (
-                    <motion.div
-                        key={notice.id}
-                        variants={{
-                            hidden: { opacity: 0, y: 30 },
-                            visible: {
-                                opacity: 1,
-                                y: 0,
-                                transition: { type: "spring", stiffness: 260, damping: 20 }
-                            }
-                        }}
-                        whileHover={{ y: -8, scale: 1.01 }}
-                        className={`
+                {filteredAndSortedNotices.length > 0 ? (
+                    filteredAndSortedNotices.map((notice) => (
+                        <motion.div
+                            key={notice.id}
+                            layout
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -30 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                            whileHover={{ y: -8, scale: 1.01 }}
+                            className={`
                             group relative bg-white dark:bg-slate-800 rounded-[2rem] cursor-pointer overflow-hidden
                             border border-slate-100 dark:border-slate-700
                             shadow-xl shadow-slate-200/40 dark:shadow-black/20
                             hover:shadow-2xl hover:shadow-violet-200/50 dark:hover:shadow-violet-900/20
                             hover:-translate-y-1 transition-all duration-500
                         `}
-                        onClick={() => setSelectedNotice(notice)}
-                    >
-                        {/* Colorful Gradient Overlay on Hover */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 via-violet-500/0 to-violet-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        {/* Decorative Gradient Blob */}
-                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-violet-100 to-fuchsia-100 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            onClick={() => setSelectedNotice(notice)}
+                        >
+                            {/* Colorful Gradient Overlay on Hover */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 via-violet-500/0 to-violet-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            {/* Decorative Gradient Blob */}
+                            <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-violet-100 to-fuchsia-100 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                        <div className="relative p-7 h-full flex flex-col">
-                            {/* Header: Icon & Date */}
-                            <div className="flex items-start justify-between mb-6">
-                                <div className={`
+                            <div className="relative p-7 h-full flex flex-col">
+                                {/* Header: Icon & Date */}
+                                <div className="flex items-start justify-between mb-6">
+                                    <div className={`
                                     w-14 h-14 rounded-2xl flex items-center justify-center text-xl shadow-sm
                                     ${notice.priority === 'HIGH'
-                                        ? 'bg-rose-50 text-rose-600 ring-1 ring-rose-100'
-                                        : 'bg-slate-50 text-slate-600 group-hover:bg-violet-50 group-hover:text-violet-600 ring-1 ring-slate-100 group-hover:ring-violet-100'} 
+                                            ? 'bg-rose-50 text-rose-600 ring-1 ring-rose-100'
+                                            : 'bg-slate-50 text-slate-600 group-hover:bg-violet-50 group-hover:text-violet-600 ring-1 ring-slate-100 group-hover:ring-violet-100'} 
                                     transition-all duration-300
                                 `}>
-                                    {notice.priority === 'HIGH' ? <Megaphone className="w-6 h-6" /> : <Bell className="w-6 h-6" />}
-                                </div>
-                                {!!notice.isPinned && (
-                                    <div className="bg-violet-50 p-2 rounded-xl text-violet-600 ring-1 ring-violet-100">
-                                        <Pin className="w-4 h-4 fill-current rotate-45" />
+                                        {notice.priority === 'HIGH' ? <Megaphone className="w-6 h-6" /> : <Bell className="w-6 h-6" />}
                                     </div>
-                                )}
-                            </div>
+                                    {!!notice.isPinned && (
+                                        <div className="bg-violet-50 p-2 rounded-xl text-violet-600 ring-1 ring-violet-100">
+                                            <Pin className="w-4 h-4 fill-current rotate-45" />
+                                        </div>
+                                    )}
+                                </div>
 
-                            {/* Priority Badge (if HIGH) */}
-                            {notice.priority === 'HIGH' && (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-rose-50 text-rose-600 w-fit mb-3 ring-1 ring-rose-100">
-                                    <span className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                                {/* Priority Badge (if HIGH) */}
+                                {notice.priority === 'HIGH' && (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-rose-50 text-rose-600 w-fit mb-3 ring-1 ring-rose-100">
+                                        <span className="relative flex h-2 w-2">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                                        </span>
+                                        Critical Update
                                     </span>
-                                    Critical Update
-                                </span>
-                            )}
+                                )}
 
-                            <h3 className="text-xl font-bold text-slate-800 mb-3 leading-tight group-hover:text-violet-700 transition-colors">
-                                {notice.title}
-                            </h3>
+                                <h3 className="text-xl font-bold text-slate-800 mb-3 leading-tight group-hover:text-violet-700 transition-colors">
+                                    {notice.title}
+                                </h3>
 
-                            {/* Preview Text */}
-                            <div className="text-slate-500 text-sm line-clamp-3 mb-6 flex-1 leading-relaxed [&>p]:inline">
-                                {parse(typeof notice.description === 'string' ? notice.description : '')}
-                            </div>
+                                {/* Preview Text */}
+                                <div className="text-slate-500 text-sm line-clamp-3 mb-6 flex-1 leading-relaxed [&>p]:inline">
+                                    {parse(typeof notice.description === 'string' ? notice.description : '')}
+                                </div>
 
-                            {/* Footer */}
-                            <div className="flex items-center justify-between pt-5 border-t border-slate-50 mt-auto">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                                    <Calendar className="w-3.5 h-3.5" />
-                                    {new Date(notice.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                </span>
-                                <div className="flex items-center gap-2 text-violet-600 text-sm font-semibold opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                                    Read More <ArrowRight className="w-4 h-4" />
+                                {/* Footer */}
+                                <div className="flex items-center justify-between pt-5 border-t border-slate-50 mt-auto">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                                        <Calendar className="w-3.5 h-3.5" />
+                                        {new Date(notice.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                    </span>
+                                    <div className="flex items-center gap-2 text-violet-600 text-sm font-semibold opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+                                        Read More <ArrowRight className="w-4 h-4" />
+                                    </div>
                                 </div>
                             </div>
+                        </motion.div>
+                    ))
+                ) : (
+                    <div className="col-span-full flex flex-col items-center justify-center p-12 text-center bg-white rounded-[2rem] border border-dashed border-slate-200">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-400">
+                            <Search className="w-8 h-8 opacity-50" />
                         </div>
-                    </motion.div>
-                ))}
+                        <h3 className="text-lg font-bold text-slate-700 mb-1">No notices found</h3>
+                        <p className="text-slate-500">Try adjusting your search.</p>
+                        <button
+                            onClick={() => { setSearchQuery(""); setSortOrder("newest"); }}
+                            className="mt-4 text-violet-600 font-bold text-sm hover:underline"
+                        >
+                            Clear search
+                        </button>
+                    </div>
+                )}
             </motion.div>
 
             {/* Modal */}
@@ -147,7 +205,7 @@ export function NoticeFeed({ notices }: { notices: any[] }) {
 
                                 <button
                                     onClick={() => setSelectedNotice(null)}
-                                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-white/20 text-white/80 hover:text-white transition-all backdrop-blur-md z-10"
+                                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-white/20 text-white/80 hover:text-white transition-all backdrop-blur-md z-50"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>

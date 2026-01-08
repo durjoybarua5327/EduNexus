@@ -43,14 +43,17 @@ export default async function RoutinePage() {
     return (
         <div className="max-w-[1600px] mx-auto space-y-12">
             {/* Premium Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-emerald-100">
-                <div className="space-y-2">
-                    <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-                        Schedule
-                    </h1>
-                </div>
+            {/* Vibrant Premium Header */}
+            <div className="relative mb-8">
+                <div className="absolute -top-10 -left-10 w-32 h-32 bg-emerald-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+                <div className="absolute top-0 right-10 w-24 h-24 bg-teal-50 rounded-full blur-2xl opacity-60 pointer-events-none"></div>
 
-                <div className="flex items-center gap-3">
+                <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
+                    <div className="space-y-3">
+                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                            My <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">Schedule</span>
+                        </h1>
+                    </div>
                 </div>
             </div>
 
@@ -58,7 +61,7 @@ export default async function RoutinePage() {
                 {/* Class Routines */}
                 <div className="space-y-6">
                     <div className="flex items-center gap-4 mb-4">
-                        <h2 className="text-2xl font-bold text-gray-900">Class Routine</h2>
+                        <h2 className="text-xl font-bold text-gray-900">Class Routine</h2>
                         <div className="h-px bg-emerald-100 flex-1" />
                     </div>
                     <RoutineList routines={classRoutines} type="CLASS" />
@@ -67,7 +70,7 @@ export default async function RoutinePage() {
                 {/* Exam Routines */}
                 <div className="space-y-6">
                     <div className="flex items-center gap-4 mb-4">
-                        <h2 className="text-2xl font-bold text-gray-900">Exam Schedule</h2>
+                        <h2 className="text-xl font-bold text-gray-900">Exam Schedule</h2>
                         <div className="h-px bg-rose-100 flex-1" />
                     </div>
                     <RoutineList routines={examRoutines} type="EXAM" />

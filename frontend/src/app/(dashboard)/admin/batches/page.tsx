@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useUser } from "@/context/user-context";
-import { Plus, Layers, Users, Trash2, Calendar, Eye, Shield, ShieldOff, Mail, Edit3, MoreVertical, GraduationCap } from "lucide-react";
+import { Plus, Layers, Users, Trash2, Calendar, Eye, Shield, ShieldOff, Mail, Edit3, MoreVertical, GraduationCap, Star } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import toast from "react-hot-toast";
@@ -195,8 +195,47 @@ export default function BatchesPage() {
         });
     }
 
-    async function handleSendCredentials() {
-        toast.success("Credentials sent to all CRs (Simulation)");
+    async function handleToggleTopCR(studentId: string, currentIsTopCR: boolean) {
+        // Count current Top CRs
+        const topCRCount = batchStudents.filter(s => s.role === 'CR' && s.isTopCR).length;
+
+        if (!currentIsTopCR && topCRCount >= 2) {
+            toast.error("Maximum 2 Top CRs allowed per batch");
+            return;
+        }
+
+        setConfirmAction({
+            title: currentIsTopCR ? "Remove Top CR Status" : "Assign Top CR",
+            message: currentIsTopCR
+                ? "This CR will become a normal CR with limited permissions."
+                : "This CR will become a Top CR with expanded management permissions.",
+            confirmText: currentIsTopCR ? "Remove" : "Assign",
+            isDanger: currentIsTopCR,
+            onConfirm: async () => {
+                try {
+                    const res = await fetch("/api/dept/students", {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            studentId,
+                            action: 'TOGGLE_TOP_CR',
+                            isTopCR: !currentIsTopCR,
+                            departmentId: deptId
+                        }),
+                    });
+
+                    if (res.ok) {
+                        toast.success(currentIsTopCR ? "Top CR status removed" : "Top CR assigned");
+                        // Refresh student list
+                        const listRes = await fetch(`/api/dept/students?batchId=${selectedBatch.id}`);
+                        if (listRes.ok) setBatchStudents(await listRes.json());
+                    } else {
+                        const data = await res.json();
+                        toast.error(data.error || "Failed to update Top CR status");
+                    }
+                } catch (e) { toast.error("Error updating Top CR"); }
+            }
+        });
     }
 
     const [lastSubmitTime, setLastSubmitTime] = useState(0);
@@ -454,9 +493,6 @@ export default function BatchesPage() {
                             <button onClick={() => { setIsEditStudentMode(false); setStudentData({ name: "", email: "", password: "changeme123", studentIdNo: "" }); setIsAddStudentOpen(true); }} className="text-xs flex items-center gap-1.5 text-indigo-700 hover:text-white font-bold bg-white hover:bg-indigo-600 px-4 py-2 rounded-lg border border-indigo-100 transition-all shadow-sm">
                                 <Plus className="w-3.5 h-3.5" /> Assign CR
                             </button>
-                            <button onClick={handleSendCredentials} className="text-xs flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-bold bg-white hover:bg-gray-100 px-4 py-2 rounded-lg border border-gray-200 transition-all shadow-sm">
-                                <Mail className="w-3.5 h-3.5" /> Send Credentials
-                            </button>
                         </div>
                     </div>
 
@@ -465,30 +501,61 @@ export default function BatchesPage() {
                             {batchStudents.map(student => (
                                 <div key={student.id} className="flex justify-between items-center p-4 bg-white rounded-xl border border-gray-100 hover:border-indigo-100 hover:shadow-md transition-all group">
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${student.role === 'CR' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors'}`}>
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${student.role === 'CR' && student.isTopCR
+                                            ? 'bg-gradient-to-br from-violet-600 to-purple-600 text-white'
+                                            : student.role === 'CR'
+                                                ? 'bg-indigo-600 text-white'
+                                                : 'bg-gray-100 text-gray-500 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors'
+                                            }`}>
                                             {student.name[0]}
                                         </div>
                                         <div>
                                             <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
                                                 {student.name}
-                                                {student.role === 'CR' && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold border border-indigo-200">CR</span>}
+                                                {student.role === 'CR' && student.isTopCR && (
+                                                    <span className="flex items-center gap-1 text-[10px] bg-gradient-to-r from-violet-600 to-purple-600 text-white px-2 py-0.5 rounded font-bold">
+                                                        <Star className="w-2.5 h-2.5 fill-yellow-300 text-yellow-300" /> TOP CR
+                                                    </span>
+                                                )}
+                                                {student.role === 'CR' && !student.isTopCR && (
+                                                    <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold border border-indigo-200">CR</span>
+                                                )}
                                             </p>
                                             <p className="text-xs text-gray-500 font-mono mt-0.5">ID: {student.studentIdNo || 'N/A'}</p>
                                         </div>
                                     </div>
 
-                                    {student.role === 'CR' ? (
-                                        <button onClick={() => handleCRAction(student.id, 'REVOKE')} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Revoke CR Status">
-                                            <ShieldOff className="w-4 h-4" />
+                                    <div className="flex items-center gap-1">
+                                        {/* Top CR Toggle (only for CRs) */}
+                                        {student.role === 'CR' && (
+                                            <button
+                                                onClick={() => handleToggleTopCR(student.id, student.isTopCR)}
+                                                className={`p-2 rounded-lg transition-colors ${student.isTopCR
+                                                    ? 'text-purple-600 hover:bg-purple-50'
+                                                    : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50'
+                                                    }`}
+                                                title={student.isTopCR ? "Remove Top CR" : "Make Top CR"}
+                                            >
+                                                <Star className={`w-4 h-4 ${student.isTopCR ? 'fill-purple-600' : ''}`} />
+                                            </button>
+                                        )}
+
+                                        {/* Revoke CR / Promote to CR */}
+                                        {student.role === 'CR' ? (
+                                            <button onClick={() => handleCRAction(student.id, 'REVOKE')} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Revoke CR Status">
+                                                <ShieldOff className="w-4 h-4" />
+                                            </button>
+                                        ) : (
+                                            <button onClick={() => handleCRAction(student.id, 'PROMOTE')} className="p-2 text-gray-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Promote to CR">
+                                                <Shield className="w-4 h-4" />
+                                            </button>
+                                        )}
+
+                                        {/* Edit Button */}
+                                        <button onClick={() => openEditStudent(student)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Edit Student">
+                                            <Edit3 className="w-4 h-4" />
                                         </button>
-                                    ) : (
-                                        <button onClick={() => handleCRAction(student.id, 'PROMOTE')} className="p-2 text-gray-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Promote to CR">
-                                            <Shield className="w-4 h-4" />
-                                        </button>
-                                    )}
-                                    <button onClick={() => openEditStudent(student)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors ml-1" title="Edit Student">
-                                        <Edit3 className="w-4 h-4" />
-                                    </button>
+                                    </div>
                                 </div>
                             ))}
                             {batchStudents.length === 0 && <p className="col-span-full text-center text-gray-400 py-12 italic border border-dashed border-gray-200 rounded-xl bg-gray-50">No students found in this batch.</p>}

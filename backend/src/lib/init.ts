@@ -129,6 +129,12 @@ export async function initDatabase() {
       await db.query("ALTER TABLE User ADD COLUMN isTopDepartmentAdmin BOOLEAN DEFAULT FALSE");
     } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
 
+    try {
+      await db.query("ALTER TABLE User ADD COLUMN isTopCR BOOLEAN DEFAULT FALSE");
+      console.log("✅ Added isTopCR to User");
+    } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') console.log("ℹ️  isTopCR column already exists"); }
+
+
     // --- Audit Logs (Placed after User for FK) ---
     await db.query(`
       CREATE TABLE IF NOT EXISTS AuditLog (

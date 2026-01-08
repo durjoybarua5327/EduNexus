@@ -44,7 +44,7 @@ export default async function HomePage() {
                 <div className="absolute -top-10 -left-10 w-32 h-32 bg-indigo-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
                 <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
                     <div className="space-y-3">
-                        <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
                             Department <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">Feed</span>
                         </h1>
                     </div>

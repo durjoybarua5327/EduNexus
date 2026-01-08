@@ -38,8 +38,9 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     return res.json();
 }
 
-export async function getStudentProfile() {
-    return await fetchAPI('/student/profile');
+export async function getStudentProfile(userId?: string) {
+    const url = userId ? `/student/profile?userId=${userId}` : '/student/profile';
+    return await fetchAPI(url);
 }
 
 export async function getStudentCourses(departmentId: string, semesterId: string) {

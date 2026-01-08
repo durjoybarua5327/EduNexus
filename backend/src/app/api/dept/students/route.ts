@@ -15,7 +15,7 @@ export async function GET(req: Request) {
 
         // Fetch Students
         const [students] = await pool.query<any[]>(`
-            SELECT u.id, u.name, u.email, u.role, u.image, sp.studentIdNo
+            SELECT u.id, u.name, u.email, u.role, u.image, u.isTopCR, sp.studentIdNo
             FROM User u
             JOIN StudentProfile sp ON u.id = sp.userId
             WHERE sp.batchId = ? AND (u.role = 'STUDENT' OR u.role = 'CR')
@@ -42,8 +42,8 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
     try {
         const body = await req.json();
-        const { studentId, action, departmentId, name, password, studentIdNo } = body;
-        // action: 'PROMOTE' | 'REVOKE' | 'UPDATE_INFO'
+        const { studentId, action, departmentId, name, password, studentIdNo, isTopCR } = body;
+        // action: 'PROMOTE' | 'REVOKE' | 'UPDATE_INFO' | 'TOGGLE_TOP_CR'
 
         if (!studentId || !action) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
@@ -87,6 +87,27 @@ export async function PUT(req: Request) {
                 connection.release();
                 throw error;
             }
+        }
+
+        if (action === 'TOGGLE_TOP_CR') {
+            // Validate: Max 2 Top CRs per batch
+            if (isTopCR) {  // If we're trying to make someone a Top CR
+                const [rows] = await pool.query<any[]>(`
+                    SELECT COUNT(*) as count FROM User u
+                    JOIN StudentProfile sp ON u.id = sp.userId
+                    WHERE sp.batchId = (SELECT batchId FROM StudentProfile WHERE userId = ?)
+                    AND u.role = 'CR' AND u.isTopCR = TRUE
+                `, [studentId]);
+
+                if (rows[0].count >= 2) {
+                    return NextResponse.json({ error: "Maximum 2 Top CRs allowed per batch" }, { status: 400 });
+                }
+            }
+
+            await pool.query("UPDATE User SET isTopCR = ? WHERE id = ?", [isTopCR, studentId]);
+            await logAudit('USER_UPDATED', 'system', `${isTopCR ? 'Assigned' : 'Removed'} Top CR status for ${studentId}`, studentId);
+
+            return NextResponse.json({ message: "Top CR status updated" });
         }
 
         if (action === 'PROMOTE') {
@@ -147,9 +168,10 @@ export async function POST(req: Request) {
                 [userId, name, email, hashedPassword, userRole, departmentId]
             );
 
+            const studentProfileId = `sp-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
             await connection.query(
-                "INSERT INTO StudentProfile (userId, batchId, studentIdNo) VALUES (?, ?, ?)",
-                [userId, batchId, studentIdNo || '']
+                "INSERT INTO StudentProfile (id, userId, batchId, studentIdNo) VALUES (?, ?, ?, ?)",
+                [studentProfileId, userId, batchId, studentIdNo || '']
             );
 
             await connection.commit();

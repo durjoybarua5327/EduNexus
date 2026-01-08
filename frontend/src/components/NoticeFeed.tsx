@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Calendar, Megaphone, Pin, Tag, X, Clock, ArrowRight, Sparkles } from "lucide-react";
 import parse from 'html-react-parser';
 
 export function NoticeFeed({ notices }: { notices: any[] }) {
     const [selectedNotice, setSelectedNotice] = useState<any | null>(null);
+
+    useEffect(() => {
+        if (selectedNotice) {
+            document.body.style.overflow = 'hidden';
+            // Also add padding to right to prevent layout shift if scrollbar disappears
+            // document.body.style.paddingRight = 'var(--scrollbar-width)'; 
+        } else {
+            document.body.style.overflow = 'unset';
+            // document.body.style.paddingRight = '0';
+        }
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [selectedNotice]);
 
     return (
         <>
@@ -31,14 +43,16 @@ export function NoticeFeed({ notices }: { notices: any[] }) {
                         }}
                         whileHover={{ y: -8, scale: 1.01 }}
                         className={`
-                            group relative bg-white rounded-[2rem] cursor-pointer overflow-hidden
-                            border border-slate-100
-                            shadow-slate-200/50 shadow-lg
-                            hover:shadow-violet-200/50 hover:shadow-2xl hover:border-violet-100
-                            transition-all duration-300
+                            group relative bg-white dark:bg-slate-800 rounded-[2rem] cursor-pointer overflow-hidden
+                            border border-slate-100 dark:border-slate-700
+                            shadow-xl shadow-slate-200/40 dark:shadow-black/20
+                            hover:shadow-2xl hover:shadow-violet-200/50 dark:hover:shadow-violet-900/20
+                            hover:-translate-y-1 transition-all duration-500
                         `}
                         onClick={() => setSelectedNotice(notice)}
                     >
+                        {/* Colorful Gradient Overlay on Hover */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 via-violet-500/0 to-violet-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         {/* Decorative Gradient Blob */}
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-violet-100 to-fuchsia-100 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
@@ -103,10 +117,10 @@ export function NoticeFeed({ notices }: { notices: any[] }) {
                         {/* Backdrop */}
                         <motion.div
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
-                            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
                             onClick={() => setSelectedNotice(null)}
-                            className="absolute inset-0 bg-slate-900/40 transition-all duration-300"
+                            className="absolute inset-0 bg-slate-900/60 transition-all duration-300"
                         />
 
                         {/* Modal Card */}
@@ -121,43 +135,55 @@ export function NoticeFeed({ notices }: { notices: any[] }) {
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
                             className="relative w-full max-w-5xl max-h-[90vh] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col z-10 ring-1 ring-black/5"
                         >
-                            {/* Modal Header */}
-                            <div className={`relative px-10 py-8 shrink-0
+                            {/* Vibrant Modal Header */}
+                            <div className={`relative px-8 py-5 shrink-0 overflow-hidden
                                 ${selectedNotice.priority === 'HIGH'
-                                    ? 'bg-gradient-to-br from-rose-50 via-white to-white'
-                                    : 'bg-gradient-to-br from-violet-50 via-white to-white'}
+                                    ? 'bg-gradient-to-br from-rose-500 to-orange-600'
+                                    : 'bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600'}
                             `}>
+                                {/* Decorative Circles */}
+                                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+                                <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-black/5 rounded-full blur-2xl pointer-events-none"></div>
+
                                 <button
                                     onClick={() => setSelectedNotice(null)}
-                                    className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-white/60 hover:bg-white text-slate-400 hover:text-slate-900 transition-all shadow-sm border border-white/50 backdrop-blur-md"
+                                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-white/20 text-white/80 hover:text-white transition-all backdrop-blur-md z-10"
                                 >
-                                    <X className="w-5 h-5" />
+                                    <X className="w-4 h-4" />
                                 </button>
 
-                                <div className="flex flex-wrap items-center gap-3 mb-5">
-                                    <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm border
-                                        ${selectedNotice.priority === 'HIGH'
-                                            ? 'bg-rose-100 text-rose-700 border-rose-200'
-                                            : 'bg-violet-100 text-violet-700 border-violet-200'}
-                                    `}>
-                                        {selectedNotice.priority === 'HIGH' ? 'Critical Priority' : 'Notice Board'}
-                                    </span>
-                                    {!!selectedNotice.isPinned && (
-                                        <span className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-xs font-bold border border-amber-100">
-                                            <Pin className="w-3 h-3 fill-current rotate-45" /> Pinned
+                                <div className="relative z-10">
+                                    <div className="flex flex-wrap items-center gap-3 mb-3">
+                                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg border border-white/20 backdrop-blur-md
+                                            ${selectedNotice.priority === 'HIGH'
+                                                ? 'bg-white/20 text-white'
+                                                : 'bg-white/20 text-white'}
+                                        `}>
+                                            {selectedNotice.priority === 'HIGH' ? 'Critical Priority' : 'Notice Board'}
                                         </span>
-                                    )}
-                                </div>
+                                        {!!selectedNotice.isPinned && (
+                                            <span className="flex items-center gap-1 px-2.5 py-0.5 bg-amber-400/20 text-amber-100 rounded-full text-[10px] font-bold border border-amber-200/20 backdrop-blur-md">
+                                                <Pin className="w-3 h-3 fill-current rotate-45" /> Pinned
+                                            </span>
+                                        )}
+                                    </div>
 
-                                <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-[1.15]">
-                                    {selectedNotice.title}
-                                </h2>
+                                    <h2 className="text-xl md:text-2xl font-black text-white leading-tight mb-2 tracking-tight">
+                                        {selectedNotice.title}
+                                    </h2>
 
-                                <div className="flex items-center gap-3 mt-4 text-sm font-medium text-slate-500">
-                                    <span className="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-lg">
-                                        <Calendar className="w-3.5 h-3.5" />
-                                        {new Date(selectedNotice.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
-                                    </span>
+                                    <div className="flex items-center gap-4 text-sm font-medium text-white/80 mt-4">
+                                        <span className="flex items-center gap-2">
+                                            <Calendar className="w-4 h-4 text-white/60" />
+                                            {new Date(selectedNotice.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
+                                        </span>
+                                        {selectedNotice.expiryDate && (
+                                            <span className="flex items-center gap-2 text-orange-200">
+                                                <Clock className="w-4 h-4" />
+                                                Expires {new Date(selectedNotice.expiryDate).toLocaleDateString()}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useUser } from "@/context/user-context";
 import { Plus, BookOpen, Trash2, Calendar, User, Clock, Image as ImageIcon } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -10,8 +11,9 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function AcademicsPage() {
     const { data: session } = useSession();
+    const { user } = useUser();
     // @ts-ignore
-    const deptId = session?.user?.departmentId;
+    const deptId = user?.departmentId || (session?.user as any)?.departmentId;
 
     const [activeTab, setActiveTab] = useState<'ROUTINES' | 'EXAMS'>('ROUTINES');
 
@@ -197,10 +199,10 @@ export default function AcademicsPage() {
         }
     }
 
-    if (!deptId) return null;
+    // if (!deptId) return null;
 
     return (
-        <div className="p-6 mt-8 space-y-6 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
+        <div className="p-6 space-y-6 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
             {/* Header & Tabs Section */}
             <div className="space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-white to-blue-50/50 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm">

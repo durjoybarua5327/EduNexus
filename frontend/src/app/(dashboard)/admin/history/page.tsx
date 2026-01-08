@@ -2,22 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useUser } from "@/context/user-context";
 import { Activity, Search, Filter, ChevronLeft, ChevronRight, Clock, User, Shield } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function HistoryPage() {
     const { data: session } = useSession();
+    const { user } = useUser();
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1, total: 0 });
 
     useEffect(() => {
         // @ts-ignore
-        if (session?.user?.departmentId) {
+        const deptId = user?.departmentId || (session?.user as any)?.departmentId;
+        if (deptId) {
             // @ts-ignore
-            fetchLogs(session.user.departmentId, pagination.page);
+            fetchLogs(deptId, pagination.page);
         }
-    }, [session, pagination.page]);
+    }, [user, session, pagination.page]);
 
     async function fetchLogs(deptId: string, page: number) {
         setLoading(true);
@@ -36,7 +39,7 @@ export default function HistoryPage() {
     }
 
     return (
-        <div className="max-w-[1600px] mt-8 mx-auto p-6 space-y-8 animate-in fade-in duration-700 pb-20">
+        <div className="max-w-[1600px] mx-auto p-6 space-y-8 animate-in fade-in duration-700 pb-20">
             {/* Header */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 p-8 text-white shadow-xl">
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">

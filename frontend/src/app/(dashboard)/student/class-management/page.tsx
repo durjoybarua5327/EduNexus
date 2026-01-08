@@ -26,21 +26,13 @@ export default async function ClassManagementPage() {
             {/* Premium Header - Teal Theme */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-teal-100">
                 <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-teal-600 font-bold uppercase tracking-widest text-xs">
-                        <Megaphone className="w-4 h-4" />
-                        <span>Announcement Center</span>
-                    </div>
                     <div className="flex items-center gap-3">
                         <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
                             Class Notice
                         </h1>
-                        <span className="px-3 py-1 bg-teal-50 text-teal-700 text-xs font-black rounded-lg border border-teal-100 uppercase tracking-wide self-start mt-2">
-                            CR Access
-                        </span>
                     </div>
                 </div>
                 <div>
-                    <p className="text-right text-slate-500 font-medium">Posting for <span className="font-bold text-slate-900">{profile.batchName}</span></p>
                 </div>
             </div>
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
+import { UserProvider } from "@/context/user-context";
 
 import { Toaster } from "react-hot-toast";
 
@@ -65,15 +66,17 @@ export function DashboardShell({ children, user }: { children: React.ReactNode, 
     const links = getLinks(user?.role);
 
     return (
-        <div className="antialiased bg-gray-50 dark:bg-gray-900 min-h-screen">
-            <Toaster position="top-right" reverseOrder={false} />
-            {/* Top Navbar with Links */}
-            <Navbar user={user} links={links} />
+        <UserProvider user={user}>
+            <div className="antialiased bg-gray-50 dark:bg-gray-900 min-h-screen">
+                <Toaster position="top-right" reverseOrder={false} />
+                {/* Top Navbar with Links */}
+                <Navbar user={user} links={links} />
 
-            {/* Main Content - Removed sidebar margin (sm:ml-64) */}
-            <main className="p-6 pt-32 h-full min-h-screen container mx-auto">
-                {children}
-            </main>
-        </div>
+                {/* Main Content - Removed sidebar margin (sm:ml-64) */}
+                <main className="px-12 py-6 pt-32 h-full min-h-screen container mx-auto">
+                    {children}
+                </main>
+            </div>
+        </UserProvider>
     );
 }

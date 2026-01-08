@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useUser } from "@/context/user-context";
 import { Plus, Layers, Users, Trash2, Calendar, Eye, Shield, ShieldOff, Mail, Edit3, MoreVertical, GraduationCap } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -13,8 +14,9 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function BatchesPage() {
     const { data: session } = useSession();
+    const { user } = useUser();
     // @ts-ignore
-    const deptId = session?.user?.departmentId;
+    const deptId = user?.departmentId || (session?.user as any)?.departmentId;
 
     const [batches, setBatches] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -259,10 +261,10 @@ export default function BatchesPage() {
         });
     }
 
-    if (!deptId) return null;
+    // if (!deptId) return null;
 
     return (
-        <div className="p-6 mt-8 space-y-8 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
+        <div className="p-6 space-y-8 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
 
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-indigo-50/50 to-white/80 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm relative overflow-hidden">

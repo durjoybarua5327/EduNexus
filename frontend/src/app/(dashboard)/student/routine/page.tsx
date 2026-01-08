@@ -45,23 +45,12 @@ export default async function RoutinePage() {
             {/* Premium Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-emerald-100">
                 <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-emerald-600 font-bold uppercase tracking-widest text-xs">
-                        <CalendarRange className="w-4 h-4" />
-                        <span>Academic Calendar</span>
-                    </div>
                     <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
                         Schedule
                     </h1>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-100 px-5 py-2.5 rounded-full text-sm font-bold">
-                        <Zap className="w-4 h-4 fill-current" />
-                        {routines.length} Updates
-                    </span>
-                    <span className="inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-slate-200">
-                        {profile.batchName}
-                    </span>
                 </div>
             </div>
 

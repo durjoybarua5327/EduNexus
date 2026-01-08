@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useUser } from "@/context/user-context";
 import { Plus, Shield, Trash2, Crown } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -10,8 +11,11 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function DeptAdminsPage() {
     const { data: session } = useSession();
+    const { user } = useUser();
     // @ts-ignore
-    const { departmentId, isTopDepartmentAdmin } = session?.user || {};
+    const departmentId = user?.departmentId || (session?.user as any)?.departmentId;
+    // @ts-ignore
+    const isTopDepartmentAdmin = user?.isTopDepartmentAdmin || (session?.user as any)?.isTopDepartmentAdmin;
 
     const [admins, setAdmins] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -90,7 +94,7 @@ export default function DeptAdminsPage() {
         });
     }
 
-    if (!departmentId) return null;
+    // if (!departmentId) return null;
 
     if (!isTopDepartmentAdmin) {
         return (
@@ -103,7 +107,7 @@ export default function DeptAdminsPage() {
     }
 
     return (
-        <div className="p-6 mt-8 space-y-6 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
+        <div className="p-6 space-y-6 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-r from-white to-emerald-50/50 p-6 rounded-3xl border border-white/50 shadow-sm backdrop-blur-sm relative overflow-hidden">
                 <div className="flex items-center gap-4 relative z-10">

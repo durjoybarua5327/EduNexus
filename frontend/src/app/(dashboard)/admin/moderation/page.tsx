@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useUser } from "@/context/user-context";
 import { FileText, Trash2, Eye, ShieldAlert, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 export default function ModerationPage() {
     const { data: session } = useSession();
+    const { user } = useUser();
     // @ts-ignore
-    const deptId = session?.user?.departmentId;
+    const deptId = user?.departmentId || (session?.user as any)?.departmentId;
 
     const [files, setFiles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -52,7 +54,7 @@ export default function ModerationPage() {
         });
     }
 
-    if (!deptId) return null;
+    // if (!deptId) return null;
 
     return (
         <div className="p-6 space-y-6 animate-in fade-in duration-500">

@@ -66,50 +66,6 @@ export function Navbar({ user, links = [], onMenuClick }: NavbarProps) {
         }
     };
 
-    // Helper to get color theme based on name
-    const getColorClass = (name: string, isActive: boolean) => {
-        const base = "transition-colors duration-300";
-        if (!isActive) return `${base} text-slate-500 hover:text-slate-900 group-hover:scale-110`;
-
-        switch (name) {
-            case "Home": case "Dashboard": return `${base} text-violet-600`;
-            case "Profile": return `${base} text-fuchsia-600`;
-
-            case "My Semester": return `${base} text-sky-600`;
-            case "Routine": return `${base} text-emerald-600`;
-            case "Batch": return `${base} text-indigo-600`;
-
-            case "Resources": return `${base} text-amber-600`;
-            case "Class Notice": return `${base} text-teal-600`;
-            case "Notices": return `${base} text-rose-600`;
-
-            case "Courses": return `${base} text-orange-600`;
-            case "Uploads": return `${base} text-cyan-600`;
-
-            default: return `${base} text-violet-600`;
-        }
-    };
-
-    const getActiveBg = (name: string) => {
-        switch (name) {
-            case "Home": case "Dashboard": return "bg-violet-50 border-violet-100/50";
-            case "Profile": return "bg-fuchsia-50 border-fuchsia-100/50";
-
-            case "My Semester": return "bg-sky-50 border-sky-100/50";
-            case "Routine": return "bg-emerald-50 border-emerald-100/50";
-            case "Batch": return "bg-indigo-50 border-indigo-100/50";
-
-            case "Resources": return "bg-amber-50 border-amber-100/50";
-            case "Class Notice": return "bg-teal-50 border-teal-100/50";
-            case "Notices": return "bg-rose-50 border-rose-100/50";
-
-            case "Courses": return "bg-orange-50 border-orange-100/50";
-            case "Uploads": return "bg-cyan-50 border-cyan-100/50";
-
-            default: return "bg-violet-50 border-violet-100/50";
-        }
-    };
-
     return (
         <nav className="fixed z-40 w-full top-4 pointer-events-none">
             <div className="max-w-full mx-auto px-6 pointer-events-auto">
@@ -145,27 +101,45 @@ export function Navbar({ user, links = [], onMenuClick }: NavbarProps) {
                     </div>
 
                     {/* Horizontal Navigation Links - Centered */}
-                    <div className="hidden md:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div className="hidden md:flex items-center gap-2 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 p-2 bg-slate-50/50 rounded-[2rem] border border-white/20 backdrop-blur-sm">
                         {links.map((link) => {
-                            const isRootPath = link.href === '/superadmin' || link.href === '/dashboard';
-                            const isActive = pathname === link.href || (!isRootPath && pathname.startsWith(link.href));
+                            // Robust Active Logic
+                            const normalize = (path: string) => path.replace(/\/$/, '');
+                            const normalizedPath = normalize(pathname);
+                            const normalizedLink = normalize(link.href);
+
+                            // Define roots that require exact matching to avoid double-highlighting with children
+                            const exactMatchRoots = ['/dashboard', '/superadmin', '/student/home'];
+                            const isRoot = exactMatchRoots.includes(link.href);
+
+                            const isActive = normalizedPath === normalizedLink ||
+                                (!isRoot && normalizedPath.startsWith(normalizedLink + '/'));
+
                             return (
                                 <Link
                                     key={link.href}
                                     href={link.href}
-                                    className="relative flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 group overflow-hidden"
+                                    className={`relative flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold transition-all duration-500 group overflow-hidden ${isActive ? '' : 'hover:bg-white/50'}`}
                                 >
                                     {isActive && (
                                         <motion.div
                                             layoutId="navbar-active"
-                                            className={`absolute inset-0 border shadow-sm ${getActiveBg(link.name)}`}
-                                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                                            className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-600 shadow-lg shadow-violet-500/30 rounded-2xl"
+                                            style={{ borderRadius: 9999 }}
+                                            initial={false} // Prevent initial animation glitch
+                                            transition={{
+                                                type: "spring",
+                                                stiffness: 120, // Low stiffness = visible movement
+                                                damping: 15,    // Low damping = bouncy/fluid
+                                                mass: 1,
+                                                duration: 0.6   // Explicit duration fallback
+                                            }}
                                         />
                                     )}
-                                    <span className={`relative z-10 ${getColorClass(link.name, isActive)}`}>
+                                    <span className={`relative z-10 transition-colors duration-300 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-violet-600'}`}>
                                         {getIcon(link.name)}
                                     </span>
-                                    <span className={`relative z-10 ${isActive ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-900'}`}>
+                                    <span className={`relative z-10 transition-colors duration-300 whitespace-nowrap ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-violet-900'}`}>
                                         {link.name}
                                     </span>
                                 </Link>

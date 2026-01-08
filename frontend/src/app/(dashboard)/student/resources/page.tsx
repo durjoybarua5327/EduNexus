@@ -33,11 +33,8 @@ export default async function ResourcesPage({
         return (
             <div className="max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-700">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-gray-100">
+
                     <div>
-                        <div className="flex items-center gap-2 text-amber-600 font-bold uppercase tracking-widest text-xs mb-2">
-                            <Folder className="w-4 h-4 fill-current" />
-                            <span>File Browser</span>
-                        </div>
                         <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
                             Course Materials
                         </h1>
@@ -90,25 +87,15 @@ export default async function ResourcesPage({
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-100">
                 <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-amber-600 font-bold uppercase tracking-widest text-xs">
-                        <Library className="w-4 h-4" />
-                        <span>Academic Library</span>
-                    </div>
                     <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
                         Resources
                     </h1>
-                </div>
-                <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-slate-200">
-                        <Zap className="w-4 h-4 text-yellow-300 fill-current" />
-                        {courses.length} Active Subjects
-                    </span>
                 </div>
             </div>
 
             {/* Client Grid Component for Animations */}
             <ResourcesGrid courses={courses} />
 
-        </div>
+        </div >
     );
 }

@@ -39,26 +39,15 @@ export default async function HomePage() {
         <div className="max-w-[1600px] mx-auto space-y-8">
 
             {/* Minimalist Premium Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-gray-100/80">
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-indigo-600 font-semibold uppercase tracking-widest text-xs">
-                        <Zap className="w-4 h-4 fill-current" />
-                        <span>Live Updates</span>
+            {/* Colorful & Premium Header */}
+            <div className="relative mb-8">
+                <div className="absolute -top-10 -left-10 w-32 h-32 bg-indigo-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+                <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
+                    <div className="space-y-3">
+                        <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                            Department <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">Feed</span>
+                        </h1>
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-gray-800 to-gray-600 tracking-tight">
-                        Department Feed
-                    </h1>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    <div className="hidden md:flex flex-col items-end">
-                        <span className="text-sm font-bold text-gray-900">Batch {profile?.batchName || "N/A"}</span>
-                    </div>
-                    <div className="h-10 w-px bg-gray-200 hidden md:block"></div>
-                    <span className="inline-flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-gray-200 hover:shadow-xl hover:scale-105 transition-all cursor-default">
-                        <Sparkles className="w-4 h-4 text-yellow-300 fill-current" />
-                        {notices.length} Priority Posts
-                    </span>
                 </div>
             </div>
 

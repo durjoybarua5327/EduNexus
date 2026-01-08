@@ -41,8 +41,11 @@ export const authConfig = {
                 session.user.id = token.sub;
                 // @ts-ignore
                 session.user.role = token.role;
+
+                // Robust normalization for departmentId
                 // @ts-ignore
-                session.user.departmentId = token.departmentId;
+                session.user.departmentId = token.departmentId || token.department_id;
+
                 // @ts-ignore
                 session.user.isTopDepartmentAdmin = token.isTopDepartmentAdmin;
             }
@@ -52,8 +55,13 @@ export const authConfig = {
             if (user) {
                 // @ts-ignore
                 token.role = user.role;
+
+                // Robust normalization for departmentId from user object
                 // @ts-ignore
-                token.departmentId = user.departmentId;
+                token.departmentId = user.departmentId || user.department_id;
+                // @ts-ignore
+                token.department_id = user.departmentId || user.department_id; // Store both to be safe
+
                 // @ts-ignore
                 token.isTopDepartmentAdmin = user.isTopDepartmentAdmin;
             }

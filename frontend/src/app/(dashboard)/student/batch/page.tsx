@@ -50,12 +50,8 @@ export default async function BatchPage() {
             {/* Premium Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-indigo-100">
                 <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-indigo-600 font-bold uppercase tracking-widest text-xs">
-                        <Users className="w-4 h-4" />
-                        <span>Student Directory</span>
-                    </div>
                     <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-                        {profile.batchName}
+                        My Batch
                     </h1>
                 </div>
 
@@ -67,9 +63,6 @@ export default async function BatchPage() {
                             placeholder="Find a classmate..."
                             className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-medium placeholder:text-gray-400"
                         />
-                    </div>
-                    <div className="hidden md:flex items-center justify-center w-14 h-14 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200 font-bold text-xl">
-                        {students.length}
                     </div>
                 </div>
             </div>

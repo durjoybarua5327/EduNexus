@@ -1,12 +1,11 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
+import { authConfig } from './auth.config';
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
+    ...authConfig,
     trustHost: true,
-    pages: {
-        signIn: '/login',
-    },
     providers: [
         Credentials({
             async authorize(credentials) {
@@ -32,7 +31,14 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
                         if (res.ok && data.user) {
                             console.log('Login successful, returning user.');
-                            return data.user;
+                            // Normalize the user object here to ensure all fields are available
+                            const user = data.user;
+                            return {
+                                ...user,
+                                id: user.id || user._id, // Handle potential id mismatches
+                                departmentId: user.departmentId || user.department_id, // Handle DB field casing
+                                department_id: user.departmentId || user.department_id, // ensure both exist for downstream compatibility
+                            };
                         } else {
                             console.error('Login failed or no user data:', data);
                         }
@@ -46,33 +52,4 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             }
         })
     ],
-    callbacks: {
-        async signIn({ user }) {
-            // Allow sign in
-            return true;
-        },
-        session({ session, token }) {
-            if (token.sub && session.user) {
-                session.user.id = token.sub;
-                // @ts-ignore
-                session.user.role = token.role;
-                // @ts-ignore
-                session.user.departmentId = token.departmentId;
-                // @ts-ignore
-                session.user.isTopDepartmentAdmin = token.isTopDepartmentAdmin;
-            }
-            return session;
-        },
-        jwt({ token, user }) {
-            if (user) {
-                // @ts-ignore
-                token.role = user.role;
-                // @ts-ignore
-                token.departmentId = user.departmentId;
-                // @ts-ignore
-                token.isTopDepartmentAdmin = user.isTopDepartmentAdmin;
-            }
-            return token;
-        }
-    }
 });

@@ -1,9 +1,9 @@
 
 import { auth } from "@/auth";
-import { getStudentProfile, getStudentCourses } from "@/lib/api";
+import { getStudentProfile, getStudentCourses, getCourseById } from "@/lib/api";
 import { getFolderContents } from "@/lib/actions/files";
 import { FolderBrowser } from "@/components/FolderBrowser";
-import { BookOpen, Folder, LayoutDashboard, Sparkles, Zap, ArrowRight, Library } from "lucide-react";
+import { BookOpen, Folder, LayoutDashboard, Sparkles, Zap, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import * as Motion from "framer-motion/client"; // Use client proxy for server components if needed, or just plain divs with classes for server components. Actually, for animations in RSC, we often need a client wrapper.
 // Since this is a Server Component, I'll use standard CSS animations or a client wrapper for the grid.
@@ -26,9 +26,16 @@ export default async function ResourcesPage({
 
     // View: Specific functionality (Course Folder Browser)
     if (courseId) {
-        // Fetch Folders for this Course (and Parent if navigated)
-        const { folders, files } = await getFolderContents(folderId, undefined, courseId);
+        // Fetch course details and folder contents
+        const [courseDetails, { folders, files }] = await Promise.all([
+            getCourseById(courseId),
+            getFolderContents(folderId, undefined, courseId)
+        ]);
         const basePath = `/student/resources?courseId=${courseId}`;
+
+        const courseDisplayName = courseDetails
+            ? `${courseDetails.code} - ${courseDetails.name}`
+            : courseId;
 
         return (
             <div className="max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-700">
@@ -38,7 +45,7 @@ export default async function ResourcesPage({
                         <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
                             Course Materials
                         </h1>
-                        <p className="text-slate-500 mt-2 font-medium">Viewing resources for <span className="text-slate-900 font-bold">{courseId}</span></p>
+                        <p className="text-slate-500 mt-2 font-medium">Viewing resources for <span className="text-slate-900 font-bold">{courseDisplayName}</span></p>
                     </div>
                     <Link href="/student/resources" className="group px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all font-bold shadow-sm flex items-center gap-2">
                         <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
@@ -90,43 +97,21 @@ export default async function ResourcesPage({
     const canManage = user?.role === 'CR' || user?.role === 'ADMIN' || user?.role === 'SUPERADMIN';
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="max-w-[1600px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-            {/* Premium Header Section */}
-            <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-amber-100 via-orange-100 to-rose-100 rounded-[2.5rem] blur-xl opacity-60 group-hover:opacity-100 transition duration-1000"></div>
-                <div className="relative bg-white/70 backdrop-blur-2xl rounded-[2rem] p-8 md:p-10 border border-white/60 shadow-2xl shadow-amber-100/30 overflow-hidden">
+            {/* Premium Header */}
+            <div className="relative mb-8">
+                <div className="absolute -top-10 -left-10 w-32 h-32 bg-indigo-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+                <div className="absolute top-0 right-10 w-24 h-24 bg-violet-50 rounded-full blur-2xl opacity-60 pointer-events-none"></div>
 
-                    {/* Decorative Background Elements */}
-                    <div className="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-gradient-to-br from-amber-50 to-orange-50 rounded-full blur-3xl opacity-60"></div>
-                    <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-72 h-72 bg-gradient-to-tr from-rose-50 to-pink-50 rounded-full blur-3xl opacity-50"></div>
-
-                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl shadow-lg shadow-amber-200/50">
-                                    <Library className="w-7 h-7 text-white" />
-                                </div>
-                                <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-                                    Resources
-                                </h1>
-                            </div>
-                            <p className="text-slate-500 font-medium text-lg max-w-lg">
-                                Browse and manage academic materials. Select a semester to explore course resources.
-                            </p>
-                        </div>
-
-                        {/* Stats Badges */}
-                        <div className="flex flex-wrap gap-3">
-                            <div className="px-5 py-3 bg-white/80 backdrop-blur-sm rounded-2xl border border-amber-100 shadow-lg">
-                                <div className="text-2xl font-black text-amber-600">{semestersList.length}</div>
-                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Semesters</div>
-                            </div>
-                            <div className="px-5 py-3 bg-white/80 backdrop-blur-sm rounded-2xl border border-rose-100 shadow-lg">
-                                <div className="text-2xl font-black text-rose-600">{profile?.semesterName || "N/A"}</div>
-                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Current</div>
-                            </div>
-                        </div>
+                <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
+                    <div className="space-y-3">
+                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                            Academic <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Resources</span>
+                        </h1>
+                        <p className="text-slate-500 font-medium text-lg max-w-lg">
+                            Browse by semester. Currently in <span className="font-bold text-indigo-600">{profile?.semesterName || "N/A"}</span> semester.
+                        </p>
                     </div>
                 </div>
             </div>

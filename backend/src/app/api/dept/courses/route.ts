@@ -9,6 +9,7 @@ const CourseSchema = z.object({
     code: z.string().min(1),
     semesterId: z.string().optional(),
     teacherId: z.string().optional(),
+    credits: z.number().min(0.5).max(6).optional().default(3),
     actorId: z.string().optional()
 });
 
@@ -57,12 +58,12 @@ export async function POST(req: Request) {
         const parsed = CourseSchema.safeParse(data);
         if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-        const { name, code, semesterId, teacherId, actorId } = parsed.data;
+        const { name, code, semesterId, teacherId, credits, actorId } = parsed.data;
         const id = "crs-" + Date.now();
 
         await pool.query(
-            "INSERT INTO Course (id, name, code, semesterId, departmentId, teacherId) VALUES (?, ?, ?, ?, ?, ?)",
-            [id, name, code, semesterId || null, departmentId, teacherId || null]
+            "INSERT INTO Course (id, name, code, semesterId, departmentId, teacherId, credits) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [id, name, code, semesterId || null, departmentId, teacherId || null, credits]
         );
 
         await logAudit('COURSE_CREATED', actorId || 'system', `Created course ${code} - ${name} in dept ${departmentId}`, id);
@@ -84,11 +85,11 @@ export async function PUT(req: Request) {
         const parsed = CourseSchema.safeParse(data);
         if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-        const { name, code, semesterId, teacherId, actorId } = parsed.data;
+        const { name, code, semesterId, teacherId, credits, actorId } = parsed.data;
 
         await pool.query(
-            "UPDATE Course SET name = ?, code = ?, semesterId = ?, teacherId = ? WHERE id = ?",
-            [name, code, semesterId || null, teacherId || null, id]
+            "UPDATE Course SET name = ?, code = ?, semesterId = ?, teacherId = ?, credits = ? WHERE id = ?",
+            [name, code, semesterId || null, teacherId || null, credits, id]
         );
 
         await logAudit('COURSE_UPDATED', actorId || 'system', `Updated course ${code} - ${name}`, id);

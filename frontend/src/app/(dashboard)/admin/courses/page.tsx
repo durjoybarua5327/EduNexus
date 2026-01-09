@@ -29,7 +29,7 @@ export default function CoursesPage() {
 
     // Forms
     const [semesterForm, setSemesterForm] = useState({ name: "" });
-    const [courseForm, setCourseForm] = useState({ name: "", code: "", teacherId: "" });
+    const [courseForm, setCourseForm] = useState({ name: "", code: "", teacherId: "", credit: 3 });
     const [lastSubmitTime, setLastSubmitTime] = useState(0);
 
     useEffect(() => {
@@ -153,6 +153,7 @@ export default function CoursesPage() {
                     teacherId: courseForm.teacherId || undefined,
                     semesterId: selectedSemester.id,
                     departmentId: deptId,
+                    credits: courseForm.credit,
                     actorId: session?.user?.id // Added for Audit Logging
                 }),
             });
@@ -160,7 +161,7 @@ export default function CoursesPage() {
                 setLastSubmitTime(Date.now());
                 toast.success(`Course ${isEditMode ? "updated" : "created"}`);
                 setIsCourseModalOpen(false);
-                setCourseForm({ name: "", code: "", teacherId: "" });
+                setCourseForm({ name: "", code: "", teacherId: "", credit: 3 });
                 fetchCourses(selectedSemester.id);
             } else toast.error("Failed to create course");
         } catch (e) { toast.error("Error"); }
@@ -200,7 +201,8 @@ export default function CoursesPage() {
         setCourseForm({
             name: course.name,
             code: course.code,
-            teacherId: course.teacherId || ""
+            teacherId: course.teacherId || "",
+            credit: course.credits || 3
         });
         setIsEditMode(true);
         setIsCourseModalOpen(true);
@@ -387,6 +389,20 @@ export default function CoursesPage() {
                         <input className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                             required placeholder="e.g. Introduction to Programming"
                             value={courseForm.name} onChange={e => setCourseForm({ ...courseForm, name: e.target.value })} />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Credits</label>
+                        <input
+                            type="number"
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                            required
+                            placeholder="e.g. 3 or 1.5"
+                            min="0.5"
+                            max="6"
+                            step="0.5"
+                            value={courseForm.credit}
+                            onChange={e => setCourseForm({ ...courseForm, credit: parseFloat(e.target.value) || 3 })}
+                        />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Assign Teacher</label>

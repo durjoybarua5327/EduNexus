@@ -58,3 +58,8 @@ export async function getStudentCourses(departmentId: string, semesterId: string
     if (!departmentId || !semesterId) return [];
     return await fetchAPI(`/dept/courses?departmentId=${departmentId}&semesterId=${semesterId}`, { cache: 'no-store' }) || [];
 }
+
+export async function getCourseById(courseId: string) {
+    if (!courseId) return null;
+    return await fetchAPI(`/course/${courseId}`, { cache: 'no-store' });
+}

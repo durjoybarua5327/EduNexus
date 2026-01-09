@@ -47,6 +47,8 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
             variants={{
                 visible: { transition: { staggerChildren: 0.08 } }
             }}
+            layout
+            transition={{ layout: { type: "spring", stiffness: 200, damping: 30 } }}
         >
             {semesters.map((sem) => {
                 const isExpanded = expandedSem === sem;
@@ -55,7 +57,8 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
                 return (
                     <motion.div
                         key={sem}
-                        layout
+                        layout="position"
+                        layoutId={`semester-folder-${sem}`}
                         variants={{
                             hidden: { opacity: 0, y: 30 },
                             visible: {
@@ -65,11 +68,15 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
                             }
                         }}
                         whileHover={!isExpanded ? { y: -8, scale: 1.02 } : {}}
+                        transition={{
+                            layout: { type: "spring", stiffness: 300, damping: 35, mass: 0.8 },
+                            type: "spring", stiffness: 400, damping: 30
+                        }}
                         className={`group relative ${isExpanded ? 'col-span-full md:col-span-2 lg:col-span-3' : ''}`}
                     >
                         {/* Outer Glow Effect for Current Semester */}
                         {isCurrent && !isExpanded && (
-                            <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 via-green-400 to-teal-400 rounded-[2.2rem] blur-sm opacity-30 group-hover:opacity-50 transition-opacity duration-500" />
+                            <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-400 via-violet-400 to-indigo-400 rounded-[2.2rem] blur-sm opacity-30 group-hover:opacity-50 transition-opacity duration-500" />
                         )}
 
                         {/* Card Container */}
@@ -78,7 +85,7 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
                             ${isExpanded
                                 ? 'bg-white rounded-[2.5rem] border border-indigo-200 shadow-2xl shadow-indigo-100/40 ring-1 ring-indigo-100'
                                 : isCurrent
-                                    ? 'bg-white/90 backdrop-blur-xl rounded-[2rem] border border-emerald-200 shadow-xl shadow-emerald-100/30 hover:shadow-2xl hover:shadow-emerald-100/50 hover:border-emerald-300 cursor-pointer'
+                                    ? 'bg-white/90 backdrop-blur-xl rounded-[2rem] border border-indigo-200 shadow-xl shadow-indigo-100/30 hover:shadow-2xl hover:shadow-indigo-100/50 hover:border-indigo-300 cursor-pointer'
                                     : 'bg-white/90 backdrop-blur-xl rounded-[2rem] border border-slate-100 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:shadow-indigo-100/40 hover:border-indigo-100 cursor-pointer'
                             }
                         `}
@@ -88,10 +95,10 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
                             {!isExpanded && (
                                 <>
                                     <div className={`absolute -top-10 -right-10 w-40 h-40 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500
-                                        ${isCurrent ? 'bg-gradient-to-br from-emerald-100 to-teal-100' : 'bg-gradient-to-br from-indigo-100 to-violet-100'}
+                                        bg-gradient-to-br from-indigo-100 to-violet-100
                                     `} />
                                     <div className={`absolute -bottom-10 -left-10 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-60 transition-opacity duration-500
-                                        ${isCurrent ? 'bg-gradient-to-tr from-green-50 to-emerald-50' : 'bg-gradient-to-tr from-violet-50 to-fuchsia-50'}
+                                        bg-gradient-to-tr from-violet-50 to-indigo-50
                                     `} />
                                 </>
                             )}
@@ -103,7 +110,7 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
                                     ${isExpanded
                                         ? 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-indigo-200'
                                         : isCurrent
-                                            ? 'bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-emerald-200 group-hover:shadow-xl group-hover:scale-105'
+                                            ? 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-indigo-200 group-hover:shadow-xl group-hover:scale-105'
                                             : 'bg-gradient-to-br from-slate-100 to-slate-50 text-slate-500 group-hover:from-indigo-500 group-hover:to-violet-600 group-hover:text-white group-hover:shadow-indigo-200 group-hover:scale-105'
                                     }
                                 `}>
@@ -119,7 +126,7 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
 
                                 <div className="flex-1 min-w-0">
                                     <h3 className={`text-xl font-bold tracking-tight transition-colors duration-300
-                                        ${isExpanded ? 'text-indigo-900' : isCurrent ? 'text-emerald-700 group-hover:text-emerald-800' : 'text-slate-800 group-hover:text-indigo-700'}
+                                        ${isExpanded ? 'text-indigo-900' : isCurrent ? 'text-indigo-700 group-hover:text-indigo-800' : 'text-slate-800 group-hover:text-indigo-700'}
                                     `}>
                                         {sem} Semester
                                     </h3>
@@ -127,10 +134,10 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
                                     {isCurrent ? (
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className="relative flex h-2 w-2">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
                                             </span>
-                                            <span className="text-sm font-semibold text-emerald-600">Current Semester</span>
+                                            <span className="text-sm font-semibold text-indigo-600">Current Semester</span>
                                         </div>
                                     ) : (
                                         <p className="text-sm text-slate-500 font-medium mt-0.5">Past Semester</p>
@@ -141,7 +148,7 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
                                 {!isExpanded && (
                                     <div className={`p-3 rounded-xl transition-all duration-300
                                         ${isCurrent
-                                            ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'
+                                            ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100'
                                             : 'bg-slate-50 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600'}
                                     `}>
                                         <ChevronRight className="w-5 h-5" />
@@ -159,13 +166,16 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
                             </div>
 
                             {/* Folder Content (Courses) */}
-                            <AnimatePresence>
+                            <AnimatePresence mode="wait">
                                 {isExpanded && (
                                     <motion.div
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: "auto", opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                                        transition={{
+                                            height: { type: "spring", stiffness: 300, damping: 35, mass: 0.8 },
+                                            opacity: { duration: 0.25, ease: "easeOut" }
+                                        }}
                                         className="overflow-hidden"
                                     >
                                         <div className="p-8 bg-gradient-to-b from-white to-slate-50/50">
@@ -200,7 +210,7 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
                                                                 transition={{ type: "spring", stiffness: 350, damping: 25 }}
                                                             >
                                                                 <Wrapper
-                                                                    {...linkProps} // @ts-ignore
+                                                                    {...(linkProps as any)}
                                                                     className={`group/card relative flex flex-col p-5 rounded-2xl border bg-white overflow-hidden transition-all duration-300
                                                                         ${isResourceView
                                                                             ? 'cursor-pointer border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-100/40'

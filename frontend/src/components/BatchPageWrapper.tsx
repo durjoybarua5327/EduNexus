@@ -18,11 +18,11 @@ export function BatchPageWrapper({ students, profile, userId }: BatchPageWrapper
             {/* Beautiful Header with Add Student Button */}
             <div className="flex items-start justify-between pb-6 border-b border-slate-200">
                 <div>
-                    <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                        My Batch
+                    <h1 className="text-4xl md:text-4xl font-black tracking-tight">
+                        <span className="text-slate-900">My</span> <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Batch</span>
                     </h1>
                     <p className="mt-2 text-sm text-slate-500 font-medium">
-                        {profile.batchName} \u2022 {students.length} {students.length === 1 ? 'Member' : 'Members'}
+                        Batch {profile.batchName} <span className="mx-2 text-slate-300">•</span> {students.length} {students.length === 1 ? 'Member' : 'Members'}
                     </p>
                 </div>
 

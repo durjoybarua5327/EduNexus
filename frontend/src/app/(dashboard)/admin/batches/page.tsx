@@ -39,7 +39,8 @@ export default function BatchesPage() {
         year: new Date().getFullYear(),
         section: "A",
         startMonth: "January",
-        currentSemester: "1st"
+        currentSemester: "1st",
+        semesterDuration: 6
     });
 
     const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
@@ -238,6 +239,32 @@ export default function BatchesPage() {
         });
     }
 
+
+    async function handlePromote(batch: any) {
+        setConfirmAction({
+            title: "Promote Batch",
+            message: `Are you sure you want to promote ${batch.name} to the next semester? This will update their current semester and reset the promotion timer.`,
+            confirmText: "Promote Batch",
+            onConfirm: async () => {
+                try {
+                    const res = await fetch("/api/dept/batches", {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: batch.id, action: 'PROMOTE', name: batch.name }), // Name needed for log
+                    });
+                    if (res.ok) {
+                        toast.success("Batch promoted successfully");
+                        fetchBatches();
+                    } else {
+                        toast.error("Failed to promote batch");
+                    }
+                } catch (e) { toast.error("Error promoting batch"); }
+            }
+        });
+    }
+
+    // ... existing imports ...
+
     const [lastSubmitTime, setLastSubmitTime] = useState(0);
 
     function handleEdit(batch: any) {
@@ -247,7 +274,8 @@ export default function BatchesPage() {
             year: batch.year,
             section: batch.section || "A",
             startMonth: batch.startMonth || "January",
-            currentSemester: batch.currentSemester || "1st"
+            currentSemester: batch.currentSemester || "1st",
+            semesterDuration: parseInt(batch.semesterDuration) || 6
         });
         setIsEditMode(true);
         setIsAddOpen(true);
@@ -274,7 +302,7 @@ export default function BatchesPage() {
                 setIsAddOpen(false);
                 setIsEditMode(false);
                 setEditingBatch(null);
-                setFormData({ name: "", year: new Date().getFullYear(), section: "A", startMonth: "January", currentSemester: "1st" });
+                setFormData({ name: "", year: new Date().getFullYear(), section: "A", startMonth: "January", currentSemester: "1st", semesterDuration: 6 });
                 fetchBatches();
             } else {
                 toast.error("Failed to create batch");
@@ -379,9 +407,38 @@ export default function BatchesPage() {
                                         )}
                                     </div>
 
-                                    <button onClick={() => handleViewStudents(batch)} className="w-full py-2.5 flex items-center justify-center gap-2 bg-gray-50 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 rounded-xl text-sm font-semibold transition-all border border-transparent hover:border-indigo-100">
+                                    <button onClick={() => handleViewStudents(batch)} className="w-full py-2.5 flex items-center justify-center gap-2 bg-gray-50 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 rounded-xl text-sm font-semibold transition-all border border-transparent hover:border-indigo-100 mb-2">
                                         <Users className="w-4 h-4" /> Manage Students
                                     </button>
+
+                                    {/* Promotion Logic Display */}
+                                    {(() => {
+                                        if (batch.currentSemester === "Completed" || batch.semesterDuration === "Continuous") return null;
+
+                                        const durationMonths = parseInt(batch.semesterDuration) || 6;
+
+                                        const lastPromo = batch.lastPromotionDate ? new Date(batch.lastPromotionDate) : new Date(batch.createdAt);
+                                        const nextPromoDate = new Date(lastPromo);
+                                        nextPromoDate.setMonth(nextPromoDate.getMonth() + durationMonths);
+
+                                        const isDue = new Date() >= nextPromoDate;
+                                        const daysOverdue = Math.floor((new Date().getTime() - nextPromoDate.getTime()) / (1000 * 3600 * 24));
+
+                                        return (
+                                            <button
+                                                onClick={() => handlePromote(batch)}
+                                                disabled={!isDue}
+                                                className={`w-full py-2.5 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all border shadow-sm
+                                            ${isDue
+                                                        ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-transparent hover:shadow-lg hover:scale-[1.02] animate-pulse cursor-pointer"
+                                                        : "bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed opacity-70"
+                                                    }`}
+                                            >
+                                                <GraduationCap className="w-4 h-4" />
+                                                {isDue ? `Promote Now (${daysOverdue} days overdue)` : `Promote in ${Math.abs(daysOverdue)} days`}
+                                            </button>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>
@@ -430,12 +487,12 @@ export default function BatchesPage() {
                                 onChange={e => setFormData({ ...formData, startMonth: e.target.value })}
                                 size={5}>
                                 <option value="January">January</option>
-                                <option value="July">July</option>
                                 <option value="February">February</option>
                                 <option value="March">March</option>
                                 <option value="April">April</option>
                                 <option value="May">May</option>
                                 <option value="June">June</option>
+                                <option value="July">July</option>
                                 <option value="August">August</option>
                                 <option value="September">September</option>
                                 <option value="October">October</option>
@@ -472,6 +529,23 @@ export default function BatchesPage() {
                             </select>
                         </div>
                     </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Semester Duration</label>
+                        <input
+                            type="number"
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300"
+                            placeholder="e.g. 6"
+                            min="1"
+                            max="60"
+                            value={formData.semesterDuration}
+                            onChange={e => setFormData({ ...formData, semesterDuration: parseInt(e.target.value) || 0 })}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                            Enter the duration in months (e.g. 6). Determines when the system suggests promoting the batch.
+                        </p>
+                    </div>
+
                     <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-50">
                         <button type="button" onClick={() => { setIsAddOpen(false); setIsEditMode(false); setEditingBatch(null); }} className="px-5 py-2.5 text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 font-medium transition-colors">Cancel</button>
                         <button type="submit" className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5">

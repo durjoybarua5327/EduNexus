@@ -10,8 +10,18 @@ const BatchSchema = z.object({
     section: z.string().optional(),
     startMonth: z.string().optional(),
     currentSemester: z.string().optional(),
+    semesterDuration: z.union([z.string(), z.number()]).optional(),
     actorId: z.string().optional(),
+    action: z.string().optional(), // For custom actions like PROMOTE
 });
+
+// Helper to increment semester
+function getNextSemester(current: string): string {
+    const sems = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
+    const idx = sems.indexOf(current.split(' ')[0]); // "1st", "2nd" etc
+    if (idx === -1 || idx === sems.length - 1) return "Completed";
+    return sems[idx + 1];
+}
 
 export async function GET(req: Request) {
     try {
@@ -31,8 +41,6 @@ export async function GET(req: Request) {
         `, [departmentId]);
 
         // Fetch CRs for these batches
-        // Could be done in one query but let's keep it simple for now or use a join if performant.
-        // Let's do a join to get CRs:
         const [crs] = await pool.query<any[]>(`
             SELECT u.id, u.name, sp.batchId 
             FROM User u
@@ -63,7 +71,7 @@ export async function POST(req: Request) {
         const parsed = BatchSchema.safeParse(data);
         if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-        const { name, year, section, startMonth, currentSemester, actorId } = parsed.data;
+        const { name, year, section, startMonth, currentSemester, semesterDuration, actorId } = parsed.data;
 
         // Check for duplicates
         const [existing] = await pool.query<any[]>(
@@ -76,10 +84,12 @@ export async function POST(req: Request) {
         }
 
         const id = "bath-" + Date.now();
+        // Set lastPromotionDate to now for initial creation
+        const lastPromotionDate = new Date();
 
         await pool.query(
-            "INSERT INTO Batch (id, name, departmentId, year, section, startMonth, currentSemester) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            [id, name, departmentId, year, section || "A", startMonth || "January", currentSemester || "1st"]
+            "INSERT INTO Batch (id, name, departmentId, year, section, startMonth, currentSemester, semesterDuration, lastPromotionDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [id, name, departmentId, year, section || "A", startMonth || "January", currentSemester || "1st", semesterDuration || "6 Months", lastPromotionDate]
         );
 
         await logAudit('BATCH_CREATED', actorId || 'system', `Created batch ${name} (${year}) in dept ${departmentId}`, id);
@@ -101,11 +111,29 @@ export async function PUT(req: Request) {
         const parsed = BatchSchema.safeParse(data);
         if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-        const { name, year, section, startMonth, currentSemester, actorId } = parsed.data;
+        const { name, year, section, startMonth, currentSemester, semesterDuration, actorId, action } = parsed.data;
+
+        if (action === 'PROMOTE') {
+            const nextSem = getNextSemester(currentSemester || "1st");
+            if (nextSem === "Completed") {
+                await pool.query(
+                    "UPDATE Batch SET currentSemester = ?, lastPromotionDate = NOW() WHERE id = ?",
+                    ["Completed", id]
+                );
+                await logAudit('BATCH_PROMOTED', actorId || 'system', `Batch ${name} completed studies`, id);
+            } else {
+                await pool.query(
+                    "UPDATE Batch SET currentSemester = ?, lastPromotionDate = NOW() WHERE id = ?",
+                    [nextSem, id]
+                );
+                await logAudit('BATCH_PROMOTED', actorId || 'system', `Promoted batch ${name} to ${nextSem} Semester`, id);
+            }
+            return NextResponse.json({ message: "Batch promoted" });
+        }
 
         await pool.query(
-            "UPDATE Batch SET name = ?, year = ?, section = ?, startMonth = ?, currentSemester = ? WHERE id = ?",
-            [name, year, section || "A", startMonth || "January", currentSemester || "1st", id]
+            "UPDATE Batch SET name = ?, year = ?, section = ?, startMonth = ?, currentSemester = ?, semesterDuration = ? WHERE id = ?",
+            [name, year, section || "A", startMonth || "January", currentSemester || "1st", semesterDuration || "6 Months", id]
         );
 
         await logAudit('BATCH_UPDATED', actorId || 'system', `Updated batch ${name} (${year})`, id);

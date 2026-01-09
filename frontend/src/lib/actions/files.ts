@@ -70,3 +70,37 @@ export async function getFolderContents(parentId: string | null, ownerId?: strin
     return await fetchAPI(`/files?${params.toString()}`);
 }
 
+
+export async function deleteItem(id: string) {
+    try {
+        const res = await fetchAPI(`/files?id=${id}`, {
+            method: 'DELETE'
+        });
+
+        if (res.error) return { error: res.error };
+
+        // Revalidate all related paths
+        revalidatePath('/student/profile');
+        revalidatePath('/student/resources');
+        revalidatePath('/', 'layout');
+        return { success: true };
+    } catch (e) {
+        return { error: "Delete Failed" };
+    }
+}
+
+export async function updateFolder(id: string, data: { name?: string, isPublic?: boolean }) {
+    try {
+        const res = await fetchAPI('/files', {
+            method: 'PATCH',
+            body: JSON.stringify({ id, ...data })
+        });
+
+        if (res.error) return { error: res.error };
+
+        revalidatePath('/student/profile');
+        return { success: true };
+    } catch (e) {
+        return { error: "Update Failed" };
+    }
+}

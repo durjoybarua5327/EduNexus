@@ -88,6 +88,8 @@ export async function initDatabase() {
         section VARCHAR(50),
         startMonth VARCHAR(50),
         currentSemester VARCHAR(50),
+        semesterDuration VARCHAR(50), 
+        lastPromotionDate DATETIME,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (departmentId) REFERENCES Department(id) ON DELETE CASCADE
       )
@@ -96,6 +98,8 @@ export async function initDatabase() {
     // Ensure columns exist (Migration)
     try { await db.query("ALTER TABLE Batch ADD COLUMN startMonth VARCHAR(50)"); console.log("✅ Added startMonth to Batch"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding startMonth:", e); }
     try { await db.query("ALTER TABLE Batch ADD COLUMN currentSemester VARCHAR(50)"); console.log("✅ Added currentSemester to Batch"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding currentSemester:", e); }
+    try { await db.query("ALTER TABLE Batch ADD COLUMN semesterDuration VARCHAR(50)"); console.log("✅ Added semesterDuration to Batch"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding semesterDuration:", e); }
+    try { await db.query("ALTER TABLE Batch ADD COLUMN lastPromotionDate DATETIME"); console.log("✅ Added lastPromotionDate to Batch"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding lastPromotionDate:", e); }
 
     // --- Users & Roles ---
     await db.query(`
@@ -216,7 +220,8 @@ export async function initDatabase() {
       if (e.code !== 'ER_DUP_KEYNAME') console.error("Error adding FK:", e);
     }
 
-    // Seed default semesters for existing departments
+    // Seed default semesters for existing departments (REMOVED: User requested no dummy data)
+    /*
     const [departments] = await db.query<any[]>('SELECT id FROM Department');
     for (const dept of departments) {
       const semesters = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
@@ -229,6 +234,7 @@ export async function initDatabase() {
       }
     }
     console.log("✅ Default semesters seeded");
+    */
 
 
     await db.query(`
@@ -286,6 +292,7 @@ export async function initDatabase() {
         ownerId VARCHAR(191) NOT NULL,
         courseId VARCHAR(191),
         isPublic BOOLEAN DEFAULT FALSE,
+        isSystem BOOLEAN DEFAULT FALSE,
         allowUploads ENUM('ONLY_ME', 'ANYONE') DEFAULT 'ONLY_ME',
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (ownerId) REFERENCES User(id) ON DELETE CASCADE,
@@ -293,6 +300,9 @@ export async function initDatabase() {
         FOREIGN KEY (courseId) REFERENCES Course(id) ON DELETE CASCADE
       )
     `);
+
+    // Ensure isSystem column exists
+    try { await db.query("ALTER TABLE Folder ADD COLUMN isSystem BOOLEAN DEFAULT FALSE"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
 
     await db.query(`
       CREATE TABLE IF NOT EXISTS File (

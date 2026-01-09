@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, ShieldCheck, User, Star, Trash2, UserPlus, Pencil } from "lucide-react";
+import { Mail, ShieldCheck, User, Star, Trash2, UserPlus, Pencil, GraduationCap, MoreHorizontal } from "lucide-react";
 import { EditStudentModal } from "./EditStudentModal";
+import Link from "next/link";
 
 interface BatchGridProps {
     students: any[];
@@ -26,10 +27,8 @@ export function BatchGrid({ students, currentUserRole, currentUserId, currentUse
     const handleDelete = async (studentId: string) => {
         setIsDeleting(true);
         try {
-            // TODO: Implement API call to remove student from batch
-            // await fetchAPI(`/dept/students/${studentId}/batch`, { method: 'DELETE' });
+            // TODO: Implement API call to remove student
             console.log('Delete student:', studentId);
-            // For now, just close the modal
             setDeleteConfirm(null);
         } catch (error) {
             console.error('Failed to delete student:', error);
@@ -40,8 +39,12 @@ export function BatchGrid({ students, currentUserRole, currentUserId, currentUse
 
     if (!students || students.length === 0) {
         return (
-            <div className="py-24 text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
-                <h3 className="text-xl font-bold text-slate-400">No students found in this batch.</h3>
+            <div className="flex flex-col items-center justify-center py-32 text-center">
+                <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                    <User className="w-10 h-10 text-slate-300" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">No students found</h3>
+                <p className="text-slate-500 max-w-sm mt-2">Start building your batch by adding students.</p>
             </div>
         );
     }
@@ -49,7 +52,7 @@ export function BatchGrid({ students, currentUserRole, currentUserId, currentUse
     return (
         <>
             <motion.div
-                className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
                 layout
                 initial="hidden"
                 animate="visible"
@@ -57,174 +60,192 @@ export function BatchGrid({ students, currentUserRole, currentUserId, currentUse
                     visible: { transition: { staggerChildren: 0.05 } }
                 }}
             >
-                {students.map((student) => (
-                    <motion.div
-                        key={student.id}
-                        layout
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                        whileHover={{ y: -6, scale: 1.01 }}
-                    >
-                        <div className={`relative group h-full rounded-3xl bg-white border transition-all duration-300 shadow-md hover:shadow-xl ${student.role === 'CR' ? 'border-violet-200 hover:border-violet-300 shadow-violet-100 hover:shadow-violet-200' :
-                            student.role === 'TEACHER' ? 'border-amber-200 hover:border-amber-300 shadow-amber-100 hover:shadow-amber-200' :
-                                'border-slate-100 hover:border-slate-200'
-                            }`}>
-                            {/* Card Content */}
-                            <div className="relative p-4 flex flex-col items-center text-center h-full">
+                {students.map((student) => {
+                    const isTeacher = student.role === 'TEACHER';
+                    const isStudentCR = student.role === 'CR';
 
-                                {/* Role Badge */}
-                                {(student.role === 'CR' || student.role === 'TEACHER') && (
-                                    <div className={`absolute top-3 right-3 p-1.5 rounded-lg shadow-sm ${student.role === 'CR' ? 'bg-violet-50 text-violet-600' : 'bg-amber-50 text-amber-600'
-                                        }`}>
-                                        {student.role === 'CR' ? <ShieldCheck className="w-3.5 h-3.5" /> : <Star className="w-3.5 h-3.5" />}
-                                    </div>
-                                )}
+                    return (
+                        <motion.div
+                            key={student.id}
+                            layout
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            whileHover={{ y: -8 }}
+                            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                            className="group relative"
+                        >
+                            {/* Card Background & Border */}
+                            <div className={`
+                                relative h-full bg-white rounded-[2rem] border transition-all duration-500 overflow-hidden
+                                ${isTeacher
+                                    ? 'border-amber-100 shadow-xl shadow-amber-100/20 hover:shadow-2xl hover:shadow-amber-100/40 hover:border-amber-200'
+                                    : isStudentCR
+                                        ? 'border-violet-100 shadow-xl shadow-violet-100/20 hover:shadow-2xl hover:shadow-violet-100/40 hover:border-violet-200'
+                                        : 'border-slate-100 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:shadow-slate-200/60 hover:border-slate-200'
+                                }
+                            `}>
+                                {/* Decorative Gradient Blob */}
+                                <div className={`absolute top-0 inset-x-0 h-32 bg-gradient-to-b opacity-50 transition-opacity duration-500
+                                    ${isTeacher
+                                        ? 'from-amber-50/80 to-transparent group-hover:opacity-100'
+                                        : isStudentCR
+                                            ? 'from-violet-50/80 to-transparent group-hover:opacity-100'
+                                            : 'from-slate-50/80 to-transparent group-hover:opacity-80'
+                                    }
+                                `} />
 
-                                {/* Avatar */}
-                                <div className={`relative w-20 h-20 rounded-full mb-3 overflow-hidden ring-4 ${student.role === 'CR' ? 'ring-violet-100' :
-                                    student.role === 'TEACHER' ? 'ring-amber-100' :
-                                        'ring-slate-100'
-                                    }`}>
-                                    {student.image ? (
-                                        <img src={student.image} alt={student.name} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className={`w-full h-full flex items-center justify-center ${student.role === 'CR' ? 'bg-violet-600 text-white' :
-                                            student.role === 'TEACHER' ? 'bg-amber-500 text-white' :
-                                                'bg-slate-100 text-slate-400'
-                                            }`}>
-                                            <User className="w-8 h-8" />
+                                <div className="relative p-6 flex flex-col items-center text-center h-full">
+
+                                    {/* Role Badge (Absolute Top Right) */}
+                                    {(isStudentCR || isTeacher) && (
+                                        <div className={`absolute top-5 right-5 p-2 rounded-xl backdrop-blur-md border shadow-sm
+                                            ${isTeacher
+                                                ? 'bg-amber-100/50 border-amber-200 text-amber-600'
+                                                : 'bg-violet-100/50 border-violet-200 text-violet-600'
+                                            }
+                                        `}>
+                                            {isTeacher ? <Star className="w-4 h-4 fill-current" /> : <ShieldCheck className="w-4 h-4" />}
                                         </div>
                                     )}
-                                </div>
 
-                                {/* Name */}
-                                <h3 className="text-base font-bold text-slate-900 mb-0.5 leading-tight">
-                                    {student.name}
-                                </h3>
+                                    {/* Avatar Section */}
+                                    <div className="relative mt-2 mb-5 group-hover:scale-105 transition-transform duration-500">
+                                        <div className={`
+                                            relative w-24 h-24 rounded-full p-1.5 shadow-2xl
+                                            ${isTeacher
+                                                ? 'bg-gradient-to-br from-amber-300 to-orange-400'
+                                                : isStudentCR
+                                                    ? 'bg-gradient-to-br from-violet-400 to-fuchsia-400'
+                                                    : 'bg-gradient-to-br from-slate-100 to-slate-200'
+                                            }
+                                        `}>
+                                            <div className="w-full h-full rounded-full overflow-hidden bg-white border-4 border-white">
+                                                {student.image ? (
+                                                    <img src={student.image} alt={student.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center bg-slate-50">
+                                                        <User className={`w-10 h-10 ${isTeacher ? 'text-amber-300' : isStudentCR ? 'text-violet-300' : 'text-slate-300'}`} />
+                                                    </div>
+                                                )}
+                                            </div>
 
-                                {/* Student ID or Role with Top CR Badge */}
-                                {student.role === 'CR' && student.isTopCR ? (
-                                    <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide mb-3 px-2 py-1 rounded-md bg-gradient-to-r from-violet-600 to-purple-600 text-white w-fit">
-                                        <Star className="w-3 h-3 fill-yellow-300 text-yellow-300" />
-                                        Top CR
+
+                                        </div>
                                     </div>
-                                ) : (
-                                    <div className={`text-[10px] font-semibold uppercase tracking-wide mb-3 px-2 py-0.5 rounded-md ${student.role === 'CR' ? 'bg-violet-50 text-violet-600' :
-                                        student.role === 'TEACHER' ? 'bg-amber-50 text-amber-600' :
-                                            'bg-slate-50 text-slate-500'
-                                        }`}>
-                                        {student.role === 'TEACHER' ? 'Instructor' : student.role === 'CR' ? 'Class Rep' : student.studentIdNo || "Student"}
+
+                                    {/* User Info */}
+                                    <div className="space-y-1 mb-6">
+                                        <h3 className="text-lg font-bold text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors">
+                                            {student.name}
+                                        </h3>
+
+                                        {isStudentCR && student.isTopCR ? (
+                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg shadow-violet-200">
+                                                <Star className="w-3 h-3 fill-yellow-300 text-yellow-300" />
+                                                Top CR
+                                            </div>
+                                        ) : (
+                                            <p className={`text-xs font-semibold uppercase tracking-wider
+                                                ${isTeacher ? 'text-amber-600' : isStudentCR ? 'text-violet-600' : 'text-slate-400'}
+                                            `}>
+                                                {isTeacher ? 'Faculty Member' : isStudentCR ? 'Class Representative' : student.studentIdNo || 'Student'}
+                                            </p>
+                                        )}
                                     </div>
-                                )}
 
-                                {/* Actions */}
-                                <div className="mt-auto w-full space-y-2">
-                                    {/* Profile Button */}
-                                    <a
-                                        href={`/student/profile?userId=${student.id}`}
-                                        className={`flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl font-semibold text-sm transition-all duration-300 ${student.role === 'CR' ? 'bg-violet-600 text-white hover:bg-violet-700' :
-                                            student.role === 'TEACHER' ? 'bg-amber-500 text-white hover:bg-amber-600' :
-                                                'bg-slate-100 text-slate-700 hover:bg-slate-900 hover:text-white'
-                                            }`}
-                                    >
-                                        <User className="w-4 h-4" />
-                                        <span>Profile</span>
-                                    </a>
+                                    {/* Action Buttons */}
+                                    <div className="mt-auto w-full grid grid-cols-1 gap-2">
+                                        <Link
+                                            href={`/student/profile?userId=${student.id}`}
+                                            className="w-full py-2.5 rounded-xl font-bold text-sm bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-300 border border-slate-100 hover:border-slate-200 flex items-center justify-center gap-2"
+                                        >
+                                            <User className="w-4 h-4" /> View Profile
+                                        </Link>
 
-                                    {/* Edit Button - Top CR: Can edit students and normal CRs, Normal CR: Can only edit students */}
-                                    {isCR && student.role !== 'TEACHER' && student.id !== currentUserId && (
-                                        isTopCR
-                                            ? !student.isTopCR  // Top CR can edit students and normal CRs (not other Top CRs)
-                                            : student.role === 'STUDENT'  // Normal CR can only edit students
-                                    ) && (
-                                            <button
-                                                onClick={() => setEditStudent(student)}
-                                                className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl font-semibold text-sm bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all duration-300"
-                                            >
-                                                <Pencil className="w-4 h-4" />
-                                                <span>Edit</span>
-                                            </button>
-                                        )}
-
-                                    {/* Delete Button - Top CR: Can delete students and normal CRs, Normal CR: Can only delete students */}
-                                    {isCR && student.role !== 'TEACHER' && student.id !== currentUserId && (
-                                        isTopCR
-                                            ? !student.isTopCR  // Top CR can delete students and normal CRs (not other Top CRs)
-                                            : student.role === 'STUDENT'  // Normal CR can only delete students
-                                    ) && (
-                                            <button
-                                                onClick={() => setDeleteConfirm(student.id)}
-                                                className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl font-semibold text-sm bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all duration-300"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                                <span>Remove</span>
-                                            </button>
-                                        )}
+                                        {/* CR Actions */}
+                                        {isCR && !isTeacher && student.id !== currentUserId && (
+                                            (isTopCR ? !student.isTopCR : student.role === 'STUDENT')
+                                        ) && (
+                                                <div className="grid grid-cols-2 gap-2 mt-1">
+                                                    <button
+                                                        onClick={() => setEditStudent(student)}
+                                                        className="py-2.5 rounded-xl font-bold text-sm bg-blue-50/50 text-blue-600 hover:bg-blue-500 hover:text-white transition-all duration-300 flex items-center justify-center gap-2"
+                                                    >
+                                                        <Pencil className="w-3.5 h-3.5" /> Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setDeleteConfirm(student.id)}
+                                                        className="py-2.5 rounded-xl font-bold text-sm bg-rose-50/50 text-rose-600 hover:bg-rose-500 hover:text-white transition-all duration-300 flex items-center justify-center gap-2"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" /> Remove
+                                                    </button>
+                                                </div>
+                                            )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </motion.div>
-                ))}
+                        </motion.div>
+                    );
+                })}
             </motion.div>
 
-
-
-            {/* Delete Confirmation Modal */}
+            {/* Modal Components */}
             <AnimatePresence>
                 {deleteConfirm && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        {/* Backdrop */}
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             onClick={() => setDeleteConfirm(null)}
-                            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
                         />
-
-                        {/* Modal */}
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="relative bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl"
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-sm bg-white rounded-[2rem] p-8 shadow-2xl overflow-hidden"
                         >
-                            <h3 className="text-2xl font-bold text-slate-900 mb-3">Remove Student?</h3>
-                            <p className="text-slate-600 mb-6">
-                                Are you sure you want to remove this student from the batch? This action cannot be undone.
-                            </p>
+                            <div className="absolute top-0 right-0 p-8 opacity-10">
+                                <Trash2 className="w-40 h-40 text-rose-500 -rotate-12" />
+                            </div>
 
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setDeleteConfirm(null)}
-                                    disabled={isDeleting}
-                                    className="flex-1 px-4 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-50"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(deleteConfirm)}
-                                    disabled={isDeleting}
-                                    className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50"
-                                >
-                                    {isDeleting ? 'Removing...' : 'Remove'}
-                                </button>
+                            <div className="relative z-10">
+                                <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mb-6 text-rose-500 shadow-inner">
+                                    <Trash2 className="w-8 h-8" />
+                                </div>
+
+                                <h3 className="text-2xl font-black text-slate-900 mb-3">Remove Student?</h3>
+                                <p className="text-slate-500 font-medium mb-8 leading-relaxed">
+                                    Are you sure you want to remove this student? This action cannot be undone and they will lose access.
+                                </p>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button
+                                        onClick={() => setDeleteConfirm(null)}
+                                        className="py-3.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(deleteConfirm)}
+                                        disabled={isDeleting}
+                                        className="py-3.5 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-200 transition-all hover:scale-[1.02]"
+                                    >
+                                        {isDeleting ? 'Removing...' : 'Yes, Remove'}
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     </div>
                 )}
             </AnimatePresence>
 
-            {/* Edit Student Modal */}
             <EditStudentModal
                 isOpen={!!editStudent}
                 onClose={() => setEditStudent(null)}
                 student={editStudent}
                 onSuccess={onStudentAdded}
             />
-
         </>
     );
 }

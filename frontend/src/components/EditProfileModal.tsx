@@ -11,11 +11,20 @@ interface EditProfileModalProps {
     onSuccess: () => void;
 }
 
+import { createPortal } from "react-dom";
+import { useEffect } from "react";
+
 export function EditProfileModal({ isOpen, onClose, currentName, onSuccess }: EditProfileModalProps) {
     const [name, setName] = useState(currentName);
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -44,10 +53,12 @@ export function EditProfileModal({ isOpen, onClose, currentName, onSuccess }: Ed
         }
     };
 
-    return (
+    if (!mounted) return null;
+
+    return createPortal(
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -60,7 +71,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, onSuccess }: Ed
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+                        className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
                     >
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <h3 className="text-lg font-bold text-slate-800">Edit Profile</h3>
@@ -128,6 +139,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, onSuccess }: Ed
                     </motion.div>
                 </div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 }

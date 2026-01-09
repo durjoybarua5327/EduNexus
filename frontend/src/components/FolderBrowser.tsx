@@ -1,11 +1,12 @@
 "use client";
 
-import { Folder, FileText, ChevronRight, MoreVertical, Plus } from "lucide-react";
+import { Folder, FileText, ChevronRight, MoreVertical, Plus, Lock } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { CreateFolderModal } from "./CreateFolderModal";
 import { UploadFileModal } from "./UploadFileModal";
+import { FolderActions } from "./FolderActions";
 
 interface FolderBrowserProps {
     folders: any[];
@@ -63,17 +64,25 @@ export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId, ba
                         href={getHref(folder.id)}
                         className="group relative flex flex-col items-center justify-center p-6 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition cursor-pointer"
                     >
-                        {showPrivacy && (
+                        {showPrivacy === true && (
                             <div className={`absolute top-2 left-2 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${folder.isPublic ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                                 {folder.isPublic ? 'Public' : 'Private'}
                             </div>
                         )}
+
+                        {/* Folder Actions Menu */}
                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
-                            <MoreVertical size={16} className="text-gray-400 hover:text-gray-600" />
+                            <FolderActions folder={folder} />
                         </div>
-                        <Folder size={48} className="text-indigo-400 mb-3 group-hover:scale-110 transition duration-300" />
-                        <span className="text-sm font-medium text-gray-700 text-center truncate w-full">{folder.name}</span>
-                        <span className="text-xs text-gray-400 mt-1">{folder._count?.files || 0} items</span>
+
+                        <Folder size={48} className={`mb-3 transition duration-300 group-hover:scale-110 ${folder.isSystem ? 'text-amber-400' : 'text-indigo-400'}`} />
+
+                        <span className="text-sm font-medium text-gray-700 text-center truncate w-full flex items-center justify-center gap-1.5">
+                            {folder.isSystem === true && <Lock size={12} className="text-amber-500 shrink-0" />}
+                            <span className="truncate">{folder.name}</span>
+                        </span>
+
+                        <span className="text-xs text-gray-400 mt-1">{folder._count?.total || 0} items</span>
                     </Link>
                 ))}
 

@@ -81,8 +81,16 @@ export default async function ResourcesPage({
 
     const courses = await getStudentCourses(profile.departmentId, profile.semesterId);
 
+    // View: List of Semesters (Default View)
+    const semestersList = [
+        "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"
+    ];
+
+    // Check if user is CR or Admin to allow uploads and privacy settings
+    const canManage = user?.role === 'CR' || user?.role === 'ADMIN' || user?.role === 'SUPERADMIN';
+
     return (
-        <div className="max-w-[1600px] mx-auto space-y-12">
+        <div className="max-w-[1600px] mx-auto space-y-12 p-6">
 
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-100">
@@ -90,12 +98,28 @@ export default async function ResourcesPage({
                     <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
                         Resources
                     </h1>
+                    <p className="text-slate-500 font-medium text-lg">
+                        Browse and manage academic materials by semester.
+                    </p>
                 </div>
             </div>
 
-            {/* Client Grid Component for Animations */}
-            <ResourcesGrid courses={courses} />
+            {/* Semester Folders Reuse */}
+            <div className="grid gap-8">
+                <div>
+                    <SemesterFolders
+                        semesters={semestersList}
+                        currentSemester={profile.semesterName || "1st"} // Default or current
+                        departmentId={profile.departmentId}
+                        basePath="/student/resources" // Redirect to this page with params
+                        isResourceView={true} // New prop to indicate this is for file browsing
+                        canManage={canManage} // New prop for CR permissions
+                    />
+                </div>
+            </div>
 
         </div >
     );
 }
+
+import { SemesterFolders } from "../semester/SemesterFolders";

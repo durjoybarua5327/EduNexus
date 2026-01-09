@@ -152,39 +152,39 @@ export function Navbar({ user, links = [], onMenuClick }: NavbarProps) {
                         <div className="flex items-center ml-3 relative" ref={profileRef}>
                             <button
                                 type="button"
-                                className="flex text-sm bg-slate-100 rounded-full focus:ring-4 focus:ring-violet-100 items-center justify-center w-11 h-11 transition-all active:scale-95 shadow-sm hover:shadow-md border-2 border-white hover:border-violet-100"
+                                className="flex text-sm bg-slate-100 rounded-full focus:ring-4 focus:ring-violet-100 items-center justify-center w-9 h-9 transition-all active:scale-95 shadow-sm hover:shadow-md border-2 border-white hover:border-violet-100"
                                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                             >
                                 <span className="sr-only">Open user menu</span>
                                 {user?.image ? (
                                     <img className="w-full h-full rounded-full object-cover" src={user.image} alt="user photo" />
                                 ) : (
-                                    <div className="w-full h-full rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 text-violet-600 flex items-center justify-center font-bold text-lg">
+                                    <div className="w-full h-full rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 text-violet-600 flex items-center justify-center font-bold text-sm">
                                         {user?.name?.[0] || "U"}
                                     </div>
                                 )}
                             </button>
 
                             {isProfileOpen && (
-                                <div className="z-50 absolute right-0 top-16 my-2 text-base list-none bg-white/80 backdrop-blur-2xl divide-y divide-slate-100 rounded-[2rem] shadow-2xl shadow-slate-200/50 border border-white/40 w-72 animate-in fade-in slide-in-from-top-4 duration-300 ring-1 ring-black/5">
-                                    <div className="px-6 py-6 bg-gradient-to-b from-violet-50/50 to-transparent rounded-t-[2rem]" role="none">
-                                        <p className="text-base font-bold text-slate-900" role="none">
+                                <div className="z-50 absolute right-0 top-12 my-2 text-base list-none bg-white/80 backdrop-blur-2xl divide-y divide-slate-100 rounded-[1.5rem] shadow-2xl shadow-slate-200/50 border border-white/40 w-60 animate-in fade-in slide-in-from-top-4 duration-300 ring-1 ring-black/5">
+                                    <div className="px-5 py-4 bg-gradient-to-b from-violet-50/50 to-transparent rounded-t-[1.5rem]" role="none">
+                                        <p className="text-sm font-bold text-slate-900" role="none">
                                             {user?.name || "User"}
                                         </p>
-                                        <p className="text-sm text-slate-500 truncate mt-0.5 font-medium" role="none">
+                                        <p className="text-xs text-slate-500 truncate mt-0.5 font-medium" role="none">
                                             {user?.email}
                                         </p>
-                                        <span className="inline-flex mt-4 items-center px-3 py-1 rounded-full text-[10px] font-black bg-slate-900 text-white border border-slate-700 uppercase tracking-widest shadow-lg shadow-slate-200">
+                                        <span className="inline-flex mt-3 items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-900 text-white border border-slate-700 uppercase tracking-widest shadow-lg shadow-slate-200">
                                             {user?.role?.replace('_', ' ')}
                                         </span>
                                     </div>
-                                    <div className="p-2">
+                                    <div className="p-1.5">
                                         <button
                                             onClick={() => signOut()}
-                                            className="flex w-full items-center px-4 py-3 text-sm text-rose-600 rounded-2xl hover:bg-rose-50 transition-colors font-bold group"
+                                            className="flex w-full items-center px-4 py-2 text-xs text-rose-600 rounded-xl hover:bg-rose-50 transition-colors font-bold group"
                                             role="menuitem"
                                         >
-                                            <LogOut className="w-4 h-4 mr-3 group-hover:-translate-x-0.5 transition-transform" />
+                                            <LogOut className="w-3.5 h-3.5 mr-2 group-hover:-translate-x-0.5 transition-transform" />
                                             Sign out
                                         </button>
                                     </div>

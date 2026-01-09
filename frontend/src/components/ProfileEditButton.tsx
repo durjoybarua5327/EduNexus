@@ -20,9 +20,9 @@ export function ProfileEditButton({ currentName, isOwnProfile }: ProfileEditButt
         <>
             <button
                 onClick={() => setIsModalOpen(true)}
-                className="mt-4 md:mt-0 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-full font-bold shadow-lg shadow-indigo-200 hover:shadow-xl hover:scale-105 transition-all"
+                className="mt-4 md:mt-0 flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-full text-xs font-bold shadow-md shadow-indigo-200 hover:shadow-lg hover:scale-105 transition-all"
             >
-                <Pencil className="w-4 h-4" />
+                <Pencil className="w-3 h-3" />
                 <span>Edit Profile</span>
             </button>
 

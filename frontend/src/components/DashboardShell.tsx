@@ -73,7 +73,7 @@ export function DashboardShell({ children, user }: { children: React.ReactNode, 
                 <Navbar user={user} links={links} />
 
                 {/* Main Content - Removed sidebar margin (sm:ml-64) */}
-                <main className="px-12 py-6 pt-32 h-full min-h-screen container mx-auto">
+                <main className="px-12 py-6 pt-32 pb-24 h-full min-h-screen container mx-auto">
                     {children}
                 </main>
             </div>

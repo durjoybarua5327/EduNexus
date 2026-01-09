@@ -15,6 +15,7 @@ type AuditAction =
     | 'BATCH_CREATED'
     | 'BATCH_UPDATED'
     | 'BATCH_DELETED'
+    | 'BATCH_PROMOTED'
     | 'COURSE_CREATED'
     | 'COURSE_UPDATED'
     | 'COURSE_DELETED'

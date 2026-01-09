@@ -16,10 +16,16 @@ interface FolderBrowserProps {
     basePath: string;
     allowUploads?: boolean;
     showPrivacy?: boolean;
+    isViewingOthers?: boolean; // When viewing another user's profile
 }
 
-export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId, basePath, allowUploads = false, showPrivacy = false }: FolderBrowserProps) {
+export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId, basePath, allowUploads = false, showPrivacy = false, isViewingOthers = false }: FolderBrowserProps) {
     const router = useRouter();
+
+    // Filter out private content when viewing others
+    const visibleFolders = isViewingOthers ? folders.filter(f => f.isPublic) : folders;
+    const visibleFiles = isViewingOthers ? files.filter(f => f.isPublic) : files;
+
 
     const getHref = (id: string) => {
         const separator = basePath.includes('?') ? '&' : '?';
@@ -58,7 +64,7 @@ export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId, ba
 
             {/* Content Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {folders.map((folder) => (
+                {visibleFolders.map((folder) => (
                     <Link
                         key={folder.id}
                         href={getHref(folder.id)}
@@ -70,10 +76,12 @@ export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId, ba
                             </div>
                         )}
 
-                        {/* Folder Actions Menu */}
-                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
-                            <FolderActions folder={folder} />
-                        </div>
+                        {/* Folder Actions Menu - Only show if not viewing others */}
+                        {!isViewingOthers && (
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
+                                <FolderActions folder={folder} />
+                            </div>
+                        )}
 
                         <Folder size={48} className={`mb-3 transition duration-300 group-hover:scale-110 ${folder.isSystem ? 'text-amber-400' : 'text-indigo-400'}`} />
 
@@ -86,14 +94,16 @@ export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId, ba
                     </Link>
                 ))}
 
-                {files.map((file) => (
+                {visibleFiles.map((file) => (
                     <div
                         key={file.id}
                         className="group relative flex flex-col items-center justify-center p-6 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition cursor-pointer"
                     >
-                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
-                            <MoreVertical size={16} className="text-gray-400 hover:text-gray-600" />
-                        </div>
+                        {!isViewingOthers && (
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
+                                <MoreVertical size={16} className="text-gray-400 hover:text-gray-600" />
+                            </div>
+                        )}
                         {/* Placeholder for file icon based on type */}
                         <FileText size={48} className="text-gray-400 mb-3 group-hover:scale-110 transition duration-300" />
                         <span className="text-sm font-medium text-gray-700 text-center truncate w-full">{file.name}</span>
@@ -101,9 +111,9 @@ export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId, ba
                     </div>
                 ))}
 
-                {folders.length === 0 && files.length === 0 && (
+                {visibleFolders.length === 0 && visibleFiles.length === 0 && (
                     <div className="col-span-full py-12 text-center text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                        This folder is empty.
+                        {isViewingOthers ? "No public files available." : "This folder is empty."}
                     </div>
                 )}
             </div>

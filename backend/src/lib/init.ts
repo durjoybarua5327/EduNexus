@@ -191,6 +191,7 @@ export async function initDatabase() {
         id VARCHAR(191) PRIMARY KEY,
         name VARCHAR(191) NOT NULL,
         code VARCHAR(191),
+        credits INT DEFAULT 3,
         semesterId VARCHAR(191),
         departmentId VARCHAR(191),
         teacherId VARCHAR(191),
@@ -199,6 +200,14 @@ export async function initDatabase() {
         FOREIGN KEY (teacherId) REFERENCES User(id) ON DELETE SET NULL
       )
     `);
+
+    // Ensure credits column exists (for existing databases)
+    try {
+      await db.query("ALTER TABLE Course ADD COLUMN credits INT DEFAULT 3");
+      console.log("✅ Added credits to Course");
+    } catch (e: any) {
+      if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding credits:", e);
+    }
 
     // Migration: Add semesterId column if it doesn't exist
     try {

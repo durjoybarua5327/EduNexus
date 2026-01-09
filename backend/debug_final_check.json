@@ -1,0 +1,42 @@
+[
+  {
+    "id": "crs-1767963601985",
+    "courseName": "Fundamentals of Electric Circuits",
+    "courseCode": "EEE111",
+    "credits": 3,
+    "semester": {
+      "id": "sem-1767942447256",
+      "name": "1st"
+    }
+  },
+  {
+    "id": "crs-1767963623541",
+    "courseName": "Structural Programming Language",
+    "courseCode": "CSE 201",
+    "credits": 3,
+    "semester": {
+      "id": "sem-1767942447256",
+      "name": "1st"
+    }
+  },
+  {
+    "id": "crs-1767963668866",
+    "courseName": "Computer Network",
+    "courseCode": "CSE 302",
+    "credits": 3,
+    "semester": {
+      "id": "sem-1767942505334",
+      "name": "8th"
+    }
+  },
+  {
+    "id": "crs-1767963652710",
+    "courseName": "Data Structure",
+    "courseCode": "CSE 221",
+    "credits": 3,
+    "semester": {
+      "id": "sem-1767942505334",
+      "name": "8th"
+    }
+  }
+]

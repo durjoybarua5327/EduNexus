@@ -43,6 +43,17 @@ export async function getStudentProfile(userId?: string) {
     return await fetchAPI(url);
 }
 
+export async function getTeacherProfile(userId?: string) {
+    const url = userId ? `/teacher/profile?userId=${userId}` : '/teacher/profile';
+    return await fetchAPI(url);
+}
+
+export async function getUserProfile(userId?: string) {
+    // Universal profile fetcher - backend determines role
+    const url = userId ? `/profile?userId=${userId}` : '/profile';
+    return await fetchAPI(url);
+}
+
 export async function getStudentCourses(departmentId: string, semesterId: string) {
     if (!departmentId || !semesterId) return [];
     return await fetchAPI(`/dept/courses?departmentId=${departmentId}&semesterId=${semesterId}`, { cache: 'no-store' }) || [];

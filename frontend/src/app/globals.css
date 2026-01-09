@@ -37,7 +37,6 @@ body {
   min-height: 100vh;
 }
 
-/* Light mode specific background override */
 @media (prefers-color-scheme: light) {
   body {
     background-color: #f0f4f8;
@@ -47,4 +46,29 @@ body {
       radial-gradient(at 0% 50%, hsla(341, 100%, 96%, 1) 0px, transparent 50%);
     background-attachment: fixed;
   }
+}
+
+/* Custom animations for gradient mesh */
+@keyframes blob {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
 }

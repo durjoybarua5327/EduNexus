@@ -48,6 +48,58 @@ export async function GET(req: Request) {
             }
         }
 
+        // For TEACHER role, fetch their courses and designation
+        let teacherCourses = null;
+        let designation = null;
+        if (user.role === 'TEACHER') {
+            try {
+                // Get teacher designation from TeacherProfile
+                const [teacherProfiles] = await pool.query<any[]>("SELECT designation FROM TeacherProfile WHERE userId = ?", [userId]);
+                if (teacherProfiles && teacherProfiles[0]) {
+                    designation = teacherProfiles[0].designation;
+                }
+            } catch (error) {
+                console.error("Error fetching teacher designation:", error);
+                // Continue without designation
+            }
+
+            try {
+                // Get all courses taught by this teacher with semester info
+                const [courses] = await pool.query<any[]>(`
+                    SELECT 
+                        c.id,
+                        c.name as courseName,
+                        c.code as courseCode,
+                        c.credits,
+                        s.id as semesterId,
+                        s.name as semesterName
+                    FROM Course c
+                    LEFT JOIN Semester s ON c.semesterId = s.id
+                    WHERE c.teacherId = ?
+                    ORDER BY s.name, c.name
+                `, [userId]);
+
+                if (courses && courses.length > 0) {
+                    console.log(`Found ${courses.length} courses for teacher ${userId}:`, courses);
+                    teacherCourses = courses.map(course => ({
+                        id: course.id,
+                        courseName: course.courseName,
+                        courseCode: course.courseCode,
+                        credits: course.credits,
+                        semester: course.semesterId ? {
+                            id: course.semesterId,
+                            name: course.semesterName
+                        } : null
+                    }));
+                } else {
+                    console.log(`No courses found for teacher ${userId}`);
+                }
+            } catch (error) {
+                console.error("Error fetching teacher courses:", error);
+                // Continue without courses
+            }
+        }
+
         // Return combined context
         // TODO: Filter sensitive info if userId !== session.user.id
         return NextResponse.json({
@@ -58,11 +110,15 @@ export async function GET(req: Request) {
             role: user.role,
             isTopCR: user.isTopCR || false,
             departmentId: user.departmentId,
-            studentIdNo: profile?.studentIdNo || null, // Added studentIdNo
+            // Student-specific fields
+            studentIdNo: profile?.studentIdNo || null,
             batchId: profile?.batchId || null,
             batchName: batch?.name || null,
             semesterId: semesterId || null,
-            semesterName: batch?.currentSemester || null
+            semesterName: batch?.currentSemester || null,
+            // Teacher-specific fields
+            designation: designation,
+            courses: teacherCourses
         });
 
     } catch (e) {

@@ -28,19 +28,42 @@ export async function POST(req: Request) {
 
         // Scenario A: Teacher/Admin providing specific courses
         if (targetCourses && targetCourses.length > 0) {
-            // Find batches corresponding to these courses (Course -> Semester -> Batch)
-            // We assume Course has a semester, and we find Batches currently in that semester.
-            // Note: This matches "Current Semester" logic.
+            // Strategy: Find batches that should receive notices for these courses
+            // 1. Get the department and semester info for the selected courses
+            // 2. Find batches in that department with matching currentSemester
+            // 3. If no exact match, find all batches in the department (fallback)
+
             const placeholders = targetCourses.map(() => '?').join(',');
+
+            console.log("Creating notice for courses:", targetCourses);
+
+            // First, try to find batches with matching currentSemester
             const [rows] = await pool.query<any[]>(`
-                SELECT DISTINCT b.id
+                SELECT DISTINCT b.id, b.name, b.currentSemester
                 FROM Course c
                 JOIN Semester s ON c.semesterId = s.id
                 JOIN Batch b ON b.currentSemester = s.name AND b.departmentId = c.departmentId
                 WHERE c.id IN (${placeholders})
             `, targetCourses);
 
-            targetBatchIds = rows.map(r => r.id);
+            console.log("Batches found with exact semester match:", rows);
+
+            if (rows.length > 0) {
+                targetBatchIds = rows.map(r => r.id);
+            } else {
+                // Fallback: If no batches have matching currentSemester, 
+                // find all batches in the same department as the courses
+                console.log("No batches found with exact semester match, using department fallback");
+                const [deptRows] = await pool.query<any[]>(`
+                    SELECT DISTINCT b.id, b.name, b.currentSemester
+                    FROM Course c
+                    JOIN Batch b ON b.departmentId = c.departmentId
+                    WHERE c.id IN (${placeholders})
+                `, targetCourses);
+
+                console.log("Batches found in department:", deptRows);
+                targetBatchIds = deptRows.map(r => r.id);
+            }
         }
 
         // Scenario B: CR/Student (or fallback), posting to their own batch
@@ -52,7 +75,7 @@ export async function POST(req: Request) {
         }
 
         if (targetBatchIds.length === 0) {
-            return NextResponse.json({ error: "No target batches found. Teachers must select courses with active batches." }, { status: 400 });
+            return NextResponse.json({ error: "No target batches found. Please ensure courses have associated batches in the department." }, { status: 400 });
         }
 
         // Insert Notice for each target batch

@@ -25,6 +25,7 @@ export default function CourseManagePage(props: { params: Promise<{ courseId: st
 
     // Real Students State
     const [students, setStudents] = useState<any[]>([]);
+    const [isStudentListExpanded, setIsStudentListExpanded] = useState(false);
 
     const fetchCourseData = async () => {
         try {
@@ -229,7 +230,10 @@ export default function CourseManagePage(props: { params: Promise<{ courseId: st
                             </div>
 
                             <div className="mt-4 pt-4 border-t border-slate-100 text-center">
-                                <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700 hover:underline">
+                                <button
+                                    onClick={() => setIsStudentListExpanded(true)}
+                                    className="text-sm font-bold text-indigo-600 hover:text-indigo-700 hover:underline"
+                                >
                                     View Full Class List
                                 </button>
                             </div>
@@ -238,6 +242,89 @@ export default function CourseManagePage(props: { params: Promise<{ courseId: st
 
                 </div>
             </div>
+
+            {/* Full Screen Student List Modal */}
+            {isStudentListExpanded && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/70 backdrop-blur-md animate-in fade-in duration-200"
+                    onClick={() => setIsStudentListExpanded(false)}
+                >
+                    <div
+                        className="bg-white rounded-[2.5rem] w-full max-w-[95vw] h-[95vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-violet-50 z-10">
+                            <div>
+                                <h2 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+                                    <Users className="w-8 h-8 text-indigo-600" />
+                                    Full Class List
+                                </h2>
+                                <p className="text-slate-600 font-medium mt-2">
+                                    {course?.name || "Course"} • {course?.code || ""} • Total {students.length} students enrolled
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setIsStudentListExpanded(false)}
+                                className="p-3 rounded-full hover:bg-white text-slate-400 hover:text-slate-600 transition-all hover:shadow-md"
+                                aria-label="Close modal"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                            </button>
+                        </div>
+
+                        {/* Modal Content - Scrollable Grid */}
+                        <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50 custom-scrollbar">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                                {students.map((student) => (
+                                    <Link
+                                        key={student.id}
+                                        href={`/teacher/courses/${courseId}/students/${student.id}`}
+                                        className="flex flex-col items-center gap-4 p-6 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-200 hover:-translate-y-1 transition-all duration-300 group"
+                                    >
+                                        {/* Larger Avatar */}
+                                        {student.image ? (
+                                            <img
+                                                src={student.image}
+                                                alt={student.name}
+                                                className="w-24 h-24 rounded-full object-cover shadow-md ring-4 ring-slate-100 group-hover:ring-indigo-100 transition-all"
+                                            />
+                                        ) : (
+                                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center font-bold text-3xl shadow-md ring-4 ring-slate-100 group-hover:ring-indigo-100 transition-all">
+                                                {student.name.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+
+                                        <div className="flex-1 w-full text-center space-y-2">
+                                            <div className="text-lg font-bold text-slate-800 group-hover:text-indigo-700 transition-colors">
+                                                {student.name}
+                                            </div>
+                                            <div className="text-sm text-slate-500 truncate px-2">
+                                                {student.email}
+                                            </div>
+                                            <div className="flex flex-col gap-2 items-center pt-2">
+                                                <span className="font-mono bg-slate-100 px-3 py-1.5 rounded-lg font-semibold text-slate-700 text-sm w-fit">
+                                                    ID: {student.studentIdNo || "N/A"}
+                                                </span>
+                                                <span className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg font-semibold text-sm w-fit">
+                                                    {student.batchName}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+
+                            {students.length === 0 && (
+                                <div className="text-center py-20 text-slate-400">
+                                    <Users className="w-20 h-20 mx-auto mb-4 text-slate-200" />
+                                    <p className="text-xl font-medium">No students enrolled in this course yet.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

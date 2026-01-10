@@ -2,10 +2,15 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Calendar, Megaphone, Pin, Tag, X, Clock, ArrowRight, Sparkles, Search, Filter, Trash2 } from "lucide-react";
+import { Bell, Calendar, Megaphone, Pin, Tag, X, Clock, ArrowRight, Sparkles, Search, Filter, Trash2, Pencil } from "lucide-react";
 import parse from 'html-react-parser';
 
-export function NoticeFeed({ notices, onDelete }: { notices: any[]; onDelete?: (id: string, e: React.MouseEvent) => void }) {
+export function NoticeFeed({ notices, onDelete, onEdit, currentUserId }: {
+    notices: any[];
+    onDelete?: (id: string, e: React.MouseEvent) => void;
+    onEdit?: (notice: any, e: React.MouseEvent) => void;
+    currentUserId?: string;
+}) {
     const [selectedNotice, setSelectedNotice] = useState<any | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [sortOrder, setSortOrder] = useState("newest");
@@ -114,7 +119,18 @@ export function NoticeFeed({ notices, onDelete }: { notices: any[]; onDelete?: (
                                                 <Pin className="w-4 h-4 fill-current rotate-45" />
                                             </div>
                                         )}
-                                        {onDelete && (
+                                        {/* Only show edit button if user is the author */}
+                                        {onEdit && currentUserId && notice.authorId === currentUserId && (
+                                            <button
+                                                onClick={(e) => onEdit(notice, e)}
+                                                className="bg-indigo-50 p-2 rounded-xl text-indigo-600 ring-1 ring-indigo-100 hover:bg-indigo-100 transition-colors z-20"
+                                                title="Edit Notice"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                        {/* Only show delete button if user is the author */}
+                                        {onDelete && currentUserId && notice.authorId === currentUserId && (
                                             <button
                                                 onClick={(e) => onDelete(notice.id, e)}
                                                 className="bg-rose-50 p-2 rounded-xl text-rose-600 ring-1 ring-rose-100 hover:bg-rose-100 transition-colors z-20"

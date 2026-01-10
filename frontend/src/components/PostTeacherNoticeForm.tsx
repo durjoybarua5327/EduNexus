@@ -11,7 +11,11 @@ const ReactQuill = dynamic(() => import("react-quill-new"), {
     loading: () => <div className="h-40 bg-slate-50 flex items-center justify-center text-slate-400">Loading editor...</div>
 });
 
-export default function PostTeacherNoticeForm() {
+interface PostTeacherNoticeFormProps {
+    onSuccess?: () => void;
+}
+
+export default function PostTeacherNoticeForm({ onSuccess }: PostTeacherNoticeFormProps = {}) {
     const [courses, setCourses] = useState<any[]>([]);
     const [fetchingCourses, setFetchingCourses] = useState(true);
     const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
@@ -89,21 +93,39 @@ export default function PostTeacherNoticeForm() {
 
         try {
             const formData = new FormData(form);
-            const data = {
-                title: formData.get("title"),
-                description: description,
-                priority: formData.get("priority") || "NORMAL",
-                isPinned: formData.get("isPinned") === "on",
+            const title = formData.get("title") as string;
+            const priority = (formData.get("priority") as string) || "MEDIUM";
+            const isPinned = formData.get("isPinned") === "on";
+
+            // Prepare the request body
+            const requestBody = {
+                title,
+                description,
+                priority,
+                isPinned,
                 targetCourses: selectedCourses,
-                files: uploadedFiles
+                // Note: File attachments will need separate handling via file upload API
+                // For now, we're just posting the notice without file attachments
             };
 
-            // TODO: Implement actual API call here
-            console.log("Submitting notice:", data);
+            console.log("Submitting notice:", requestBody);
 
-            // Mock delay
-            await new Promise(r => setTimeout(r, 1000));
+            // Make the actual API call
+            const response = await fetch('/api/class-notice', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody),
+            });
 
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to publish notice');
+            }
+
+            console.log("Notice published successfully:", result);
             setStatus('success');
 
             // Reset form
@@ -112,9 +134,21 @@ export default function PostTeacherNoticeForm() {
             setSelectedCourses([]);
             form.reset(); // Use captured reference
 
+            // Call onSuccess callback if provided
+            if (onSuccess) {
+                setTimeout(() => {
+                    onSuccess();
+                }, 1000); // Small delay to show success message
+            } else {
+                // Auto-hide success message after 5 seconds only if no callback
+                setTimeout(() => setStatus('idle'), 5000);
+            }
+
         } catch (error) {
-            console.error(error);
+            console.error("Error publishing notice:", error);
             setStatus('error');
+            // Auto-hide error message after 5 seconds
+            setTimeout(() => setStatus('idle'), 5000);
         } finally {
             setLoading(false);
         }
@@ -209,8 +243,9 @@ export default function PostTeacherNoticeForm() {
                     <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200">
                         <label htmlFor="priority" className="text-sm font-medium text-slate-700 flex-1">Priority</label>
                         <select name="priority" className="text-sm bg-transparent font-bold text-slate-600 outline-none cursor-pointer">
-                            <option value="NORMAL">Normal</option>
-                            <option value="HIGH">Critical</option>
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="HIGH">High</option>
                         </select>
                     </div>
                 </div>

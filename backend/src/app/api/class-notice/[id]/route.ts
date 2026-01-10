@@ -22,6 +22,20 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             isPinned: z.boolean().optional()
         }).parse(body);
 
+        // Verify ownership - user can only edit their own notices
+        const [existing] = await pool.query<any[]>(
+            "SELECT authorId FROM ClassNotice WHERE id = ?",
+            [id]
+        );
+
+        if (existing.length === 0) {
+            return NextResponse.json({ error: "Notice not found" }, { status: 404 });
+        }
+
+        if (existing[0].authorId !== session.user.id) {
+            return NextResponse.json({ error: "You can only edit your own notices" }, { status: 403 });
+        }
+
         // Update functionality
         await pool.query(
             "UPDATE ClassNotice SET title = ?, description = ?, priority = ?, isPinned = ? WHERE id = ?",
@@ -45,9 +59,19 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
         const { id } = await params;
 
-        // Verify ownership or just role (since CR manages class notice, maybe they can delete any class notice? 
-        // For now let's assume CR can delete any notice in their batch, or just their own.
-        // Let's implement deleting by ID if they are CR. Better to check batch ID match too).
+        // Verify ownership - user can only delete their own notices
+        const [existing] = await pool.query<any[]>(
+            "SELECT authorId FROM ClassNotice WHERE id = ?",
+            [id]
+        );
+
+        if (existing.length === 0) {
+            return NextResponse.json({ error: "Notice not found" }, { status: 404 });
+        }
+
+        if (existing[0].authorId !== session.user.id) {
+            return NextResponse.json({ error: "You can only delete your own notices" }, { status: 403 });
+        }
 
         await pool.query("DELETE FROM ClassNotice WHERE id = ?", [id]);
 

@@ -35,9 +35,28 @@ export default function CourseNoticesPage(props: { params: Promise<{ courseId: s
         e.stopPropagation();
         if (!confirm("Are you sure you want to delete this notice?")) return;
 
-        // Optimistic update
-        setNotices(prev => prev.filter(n => n.id !== id));
-        // API Call would go here
+        try {
+            const response = await fetch(`/api/class-notice/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                // Optimistic update
+                setNotices(prev => prev.filter(n => n.id !== id));
+            } else {
+                const error = await response.json();
+                alert(error.error || "Failed to delete notice");
+            }
+        } catch (error) {
+            console.error("Error deleting notice:", error);
+            alert("An error occurred while deleting the notice.");
+        }
+    };
+
+    const handleEdit = (notice: any, e: React.MouseEvent) => {
+        e.stopPropagation();
+        // TODO: Implement edit modal
+        console.log("Edit notice", notice);
     };
 
     return (
@@ -70,7 +89,12 @@ export default function CourseNoticesPage(props: { params: Promise<{ courseId: s
                     <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
                 </div>
             ) : (
-                <NoticeFeed notices={notices} onDelete={handleDelete} />
+                <NoticeFeed
+                    notices={notices}
+                    onDelete={handleDelete}
+                    onEdit={handleEdit}
+                    currentUserId={user?.id}
+                />
             )}
         </div>
     );

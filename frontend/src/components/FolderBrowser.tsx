@@ -89,11 +89,10 @@ export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId, ba
                             <div className="absolute inset-0 bg-indigo-100 rounded-full blur-xl opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
                         </div>
 
-                        {showPrivacy === true && (
-                            <div className={`absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider z-20 ${folder.isPublic ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                                {folder.isPublic ? 'Public' : 'Private'}
-                            </div>
-                        )}
+                        {/* Always show public/private badge */}
+                        <div className={`absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider z-20 shadow-sm ${folder.isPublic ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-amber-100 text-amber-700 border border-amber-200'}`}>
+                            {folder.isPublic ? '🌐 Public' : '🔒 Private'}
+                        </div>
 
                         {/* Folder Actions Menu - HIGH Z-INDEX + VISIBLE */}
                         {!isViewingOthers && !readOnly && (
@@ -132,6 +131,11 @@ export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId, ba
                         {/* Background Container for Clipping Blobs */}
                         <div className="absolute inset-0 overflow-hidden rounded-[2rem]">
                             <div className="absolute inset-0 bg-blue-100 rounded-full blur-xl opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
+                        </div>
+
+                        {/* Always show public/private badge for files */}
+                        <div className={`absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider z-20 shadow-sm ${file.isPublic ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-amber-100 text-amber-700 border border-amber-200'}`}>
+                            {file.isPublic ? '🌐 Public' : '🔒 Private'}
                         </div>
 
                         {!isViewingOthers && !readOnly && (

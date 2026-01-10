@@ -141,6 +141,11 @@ export async function PATCH(req: Request) {
             await pool.query("UPDATE User SET name = ? WHERE id = ?", [name, userId]);
         }
 
+        // 2. Update Image
+        if (body.image) {
+            await pool.query("UPDATE User SET image = ? WHERE id = ?", [body.image, userId]);
+        }
+
         // 2. Update Password (if provided)
         if (password) {
             const hashedPassword = await bcrypt.hash(password, 10);

@@ -109,7 +109,7 @@ export default async function ResourcesPage({
                         <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
                             Academic <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Resources</span>
                         </h1>
-                        <p className="text-slate-500 font-medium text-lg max-w-lg">
+                        <p className="text-slate-500 font-medium text-sm max-w-lg">
                             Browse by semester. Currently in <span className="font-bold text-indigo-600">{profile?.semesterName || "N/A"}</span> semester.
                         </p>
                     </div>

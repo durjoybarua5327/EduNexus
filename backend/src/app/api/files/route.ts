@@ -231,9 +231,14 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: true, id });
         } else if (type === "file") {
             const id = 'file-' + Date.now();
+            console.log(`INSERTING FILE: id=${id}, name=${name}, size=${size}, url=${url}`);
+
+            // Fallback for null/undefined size
+            const finalSize = size || 0;
+
             await pool.query(
                 "INSERT INTO File (id, name, url, folderId, size, type, uploadedBy) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                [id, name, url, folderId, size, "unknown", userId]
+                [id, name, url, folderId, finalSize, "unknown", userId]
             );
             return NextResponse.json({ success: true, id });
         }
@@ -301,16 +306,46 @@ export async function PATCH(req: Request) {
     try {
         const [rows] = await pool.query<any[]>("SELECT ownerId, isSystem FROM Folder WHERE id = ?", [id]);
         const folder = rows[0];
-        if (!folder) return NextResponse.json({ error: "Folder not found" }, { status: 404 });
-        if (folder.ownerId !== session.user.id) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        // If folder exists, verify owner. If not, we check for file in the name update block.
+        if (folder && folder.ownerId !== session.user.id) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
         if (name) {
-            if (folder.isSystem) return NextResponse.json({ error: "System folders cannot be renamed" }, { status: 403 });
-            await pool.query("UPDATE Folder SET name = ? WHERE id = ?", [name, id]);
+            if (folder && folder.isSystem) return NextResponse.json({ error: "System folders cannot be renamed" }, { status: 403 });
+
+            if (folder) {
+                await pool.query("UPDATE Folder SET name = ? WHERE id = ?", [name, id]);
+            } else {
+                // Try updating File
+                console.log(`PATCH: Checking if ID ${id} is a file...`);
+                const [fileRows] = await pool.query<any[]>("SELECT uploadedBy FROM File WHERE id = ?", [id]);
+                const file = fileRows[0];
+                if (file) {
+                    console.log(`PATCH: File found. Owner: ${file.uploadedBy}, Current User: ${session.user.id}`);
+                    if (file.uploadedBy !== session.user.id) {
+                        console.error("PATCH: Unauthorized file update attempt");
+                        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+                    }
+                    await pool.query("UPDATE File SET name = ? WHERE id = ?", [name, id]);
+                    console.log(`PATCH: File ${id} renamed to ${name}`);
+                } else {
+                    console.error(`PATCH: Item ${id} not found as Folder or File`);
+                    return NextResponse.json({ error: "Item not found" }, { status: 404 });
+                }
+            }
         }
 
         if (isPublic !== undefined) {
-            await pool.query("UPDATE Folder SET isPublic = ? WHERE id = ?", [isPublic, id]);
+            if (folder) {
+                await pool.query("UPDATE Folder SET isPublic = ? WHERE id = ?", [isPublic, id]);
+            } else {
+                // Check if file
+                const [fileRows] = await pool.query<any[]>("SELECT uploadedBy FROM File WHERE id = ?", [id]);
+                const file = fileRows[0];
+                if (file) {
+                    if (file.uploadedBy !== session.user.id) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+                    await pool.query("UPDATE File SET isPublic = ? WHERE id = ?", [isPublic, id]);
+                }
+            }
         }
 
         return NextResponse.json({ success: true });

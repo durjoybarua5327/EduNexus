@@ -13,13 +13,28 @@ export async function POST(req: NextRequest) {
         }
 
         // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+        const allowedTypes = [
+            'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+            'application/pdf',
+            'application/msword', // .doc
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+            'application/vnd.ms-powerpoint', // .ppt
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+            'application/vnd.ms-excel', // .xls
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+            'text/plain', // .txt
+            'application/zip',
+            'application/x-zip-compressed',
+            'application/x-rar-compressed'
+        ];
         if (!allowedTypes.includes(file.type)) {
-            return NextResponse.json({ error: 'Invalid file type. Only images and PDFs are allowed.' }, { status: 400 });
+            // Log the rejected type to help debugging
+            console.log(`Rejected file type: ${file.type}`);
+            return NextResponse.json({ error: `Invalid file type: ${file.type}. Allowed: Images, PDF, Docs, Slides, Sheets, Zip.` }, { status: 400 });
         }
 
-        // Validate file size (10MB max)
-        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        // Validate file size (50MB max)
+        const maxSize = 50 * 1024 * 1024; // 50MB in bytes
         if (file.size > maxSize) {
             return NextResponse.json({ error: 'File too large. Maximum size is 10MB.' }, { status: 400 });
         }

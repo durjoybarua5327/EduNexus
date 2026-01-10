@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Plus, X, FolderPlus } from "lucide-react";
 import { createFolder } from "@/lib/actions/files";
 import { useRouter } from "next/navigation";
@@ -34,9 +35,12 @@ export function CreateFolderModal({ parentId, showPrivacy = false }: { parentId:
                 <FolderPlus size={16} /> New Folder
             </button>
 
-            {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
+            {isOpen && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+                    <div
+                        className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="flex justify-between items-center p-4 border-b">
                             <h3 className="text-lg font-semibold">New Folder</h3>
                             <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-700">
@@ -61,7 +65,8 @@ export function CreateFolderModal({ parentId, showPrivacy = false }: { parentId:
                             </div>
                         </form>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );

@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Calendar, Megaphone, Pin, Tag, X, Clock, ArrowRight, Sparkles, Search, Filter } from "lucide-react";
+import { Bell, Calendar, Megaphone, Pin, Tag, X, Clock, ArrowRight, Sparkles, Search, Filter, Trash2 } from "lucide-react";
 import parse from 'html-react-parser';
 
-export function NoticeFeed({ notices }: { notices: any[] }) {
+export function NoticeFeed({ notices, onDelete }: { notices: any[]; onDelete?: (id: string, e: React.MouseEvent) => void }) {
     const [selectedNotice, setSelectedNotice] = useState<any | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [sortOrder, setSortOrder] = useState("newest");
@@ -28,11 +28,8 @@ export function NoticeFeed({ notices }: { notices: any[] }) {
     useEffect(() => {
         if (selectedNotice) {
             document.body.style.overflow = 'hidden';
-            // Also add padding to right to prevent layout shift if scrollbar disappears
-            // document.body.style.paddingRight = 'var(--scrollbar-width)'; 
         } else {
             document.body.style.overflow = 'unset';
-            // document.body.style.paddingRight = '0';
         }
         return () => { document.body.style.overflow = 'unset'; };
     }, [selectedNotice]);
@@ -111,11 +108,22 @@ export function NoticeFeed({ notices }: { notices: any[] }) {
                                 `}>
                                         {notice.priority === 'HIGH' ? <Megaphone className="w-6 h-6" /> : <Bell className="w-6 h-6" />}
                                     </div>
-                                    {!!notice.isPinned && (
-                                        <div className="bg-violet-50 p-2 rounded-xl text-violet-600 ring-1 ring-violet-100">
-                                            <Pin className="w-4 h-4 fill-current rotate-45" />
-                                        </div>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {!!notice.isPinned && (
+                                            <div className="bg-violet-50 p-2 rounded-xl text-violet-600 ring-1 ring-violet-100">
+                                                <Pin className="w-4 h-4 fill-current rotate-45" />
+                                            </div>
+                                        )}
+                                        {onDelete && (
+                                            <button
+                                                onClick={(e) => onDelete(notice.id, e)}
+                                                className="bg-rose-50 p-2 rounded-xl text-rose-600 ring-1 ring-rose-100 hover:bg-rose-100 transition-colors z-20"
+                                                title="Delete Notice"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Priority Badge (if HIGH) */}

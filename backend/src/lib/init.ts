@@ -292,6 +292,35 @@ export async function initDatabase() {
       )
     `);
 
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS ClassNotice (
+        id VARCHAR(191) PRIMARY KEY,
+        title VARCHAR(191) NOT NULL,
+        description LONGTEXT,
+        priority ENUM('LOW', 'MEDIUM', 'HIGH') DEFAULT 'MEDIUM',
+        batchId VARCHAR(191) NOT NULL,
+        authorId VARCHAR(191) NOT NULL,
+        isPinned BOOLEAN DEFAULT FALSE,
+        expiryDate DATETIME,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (batchId) REFERENCES Batch(id) ON DELETE CASCADE,
+        FOREIGN KEY (authorId) REFERENCES User(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Ensure expiryDate exists
+    try { await db.query("ALTER TABLE ClassNotice ADD COLUMN expiryDate DATETIME"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS ClassNoticeTag (
+        noticeId VARCHAR(191),
+        tagId VARCHAR(191),
+        PRIMARY KEY (noticeId, tagId),
+        FOREIGN KEY (noticeId) REFERENCES ClassNotice(id) ON DELETE CASCADE,
+        FOREIGN KEY (tagId) REFERENCES Tag(id) ON DELETE CASCADE
+      )
+    `);
+
     // --- Content ---
     await db.query(`
       CREATE TABLE IF NOT EXISTS Folder (
@@ -321,12 +350,16 @@ export async function initDatabase() {
         folderId VARCHAR(191) NOT NULL,
         type VARCHAR(191),
         size INT,
+        isPublic BOOLEAN DEFAULT FALSE,
         uploadedBy VARCHAR(191),
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (folderId) REFERENCES Folder(id) ON DELETE CASCADE,
         FOREIGN KEY (uploadedBy) REFERENCES User(id) ON DELETE SET NULL
       )
     `);
+
+    // Ensure isPublic column exists directly in File
+    try { await db.query("ALTER TABLE File ADD COLUMN isPublic BOOLEAN DEFAULT FALSE"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
 
     console.log('✅ Tables initialized successfully.');
 

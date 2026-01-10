@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { ProfileEditButton } from "@/components/ProfileEditButton";
+import { ProfileImageUploader } from "@/components/ProfileImageUploader";
 
 export default async function ProfilePage(props: { searchParams: Promise<{ folderId?: string; userId?: string; user?: string }> }) {
     const searchParams = await props.searchParams;
@@ -53,23 +54,14 @@ export default async function ProfilePage(props: { searchParams: Promise<{ folde
                     <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-indigo-50 rounded-full blur-3xl opacity-50"></div>
                     <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-64 h-64 bg-purple-50 rounded-full blur-3xl opacity-50"></div>
 
-                    {/* Avatar */}
-                    <div className="relative shrink-0">
-                        <div className="w-40 h-40 rounded-full p-1.5 bg-gradient-to-br from-indigo-200 to-purple-200 shadow-xl">
-                            <div className="w-full h-full rounded-full overflow-hidden border-4 border-white bg-white relative">
-                                {displayUser.image ? (
-                                    <img src={displayUser.image} alt="Profile" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-slate-50">
-                                        <User className="w-20 h-20 text-slate-300" />
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <div className="absolute bottom-2 right-2 p-2.5 bg-gray-900 text-white rounded-full border-4 border-white shadow-lg">
-                            <Sparkles className="w-4 h-4" />
-                        </div>
-                    </div>
+                    {/* Avatar with Upload */}
+                    <ProfileImageUploader
+                        key={profile.id} // Force remount when viewing different users
+                        currentImage={displayUser.image}
+                        userName={displayUser.name}
+                        userId={user.id}
+                        isOwnProfile={isOwnProfile}
+                    />
 
                     {/* User Info */}
                     <div className="flex-1 text-center md:text-left space-y-3 relative z-10">

@@ -1,22 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { MoreVertical, Trash2, Edit2, Lock, Unlock, Loader2 } from "lucide-react";
-import { deleteItem, updateFolder } from "@/lib/actions/files";
+import { MoreVertical, Trash2, Edit2, Loader2, Download, Lock, Unlock } from "lucide-react";
+import { deleteItem, updateFolder } from "@/lib/actions/files"; // We can reuse updateFolder for renaming if backend supports it (it does now)
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "./ConfirmModal";
 import { RenameModal } from "./RenameModal";
 
-interface FolderActionsProps {
-    folder: {
+interface FileActionsProps {
+    file: {
         id: string;
         name: string;
-        isSystem: boolean;
-        isPublic: boolean;
+        url: string;
+        isPublic?: boolean;
     };
 }
 
-export function FolderActions({ folder }: FolderActionsProps) {
+export function FileActions({ file }: FileActionsProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -25,9 +25,23 @@ export function FolderActions({ folder }: FolderActionsProps) {
     const [showErrorModal, setShowErrorModal] = useState(false);
     const router = useRouter();
 
+
+
+
+
+    const handleDownload = () => {
+        // Use our proxy to enforce filename and avoid CORS
+        const downloadUrl = `/api/download?url=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name)}`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const handleDelete = async () => {
         setIsLoading(true);
-        const res = await deleteItem(folder.id);
+        const res = await deleteItem(file.id);
 
         if (res.error) {
             setIsLoading(false);
@@ -37,7 +51,6 @@ export function FolderActions({ folder }: FolderActionsProps) {
         } else {
             setShowDeleteModal(false);
             setIsOpen(false);
-            // Force fresh data fetch by replacing current URL
             router.refresh();
             setIsLoading(false);
         }
@@ -45,7 +58,7 @@ export function FolderActions({ folder }: FolderActionsProps) {
 
     const handleTogglePrivacy = async () => {
         setIsLoading(true);
-        const res = await updateFolder(folder.id, { isPublic: !folder.isPublic });
+        const res = await updateFolder(file.id, { isPublic: !file.isPublic });
 
         if (res.error) {
             setIsLoading(false);
@@ -60,7 +73,8 @@ export function FolderActions({ folder }: FolderActionsProps) {
 
     const handleRename = async (newName: string) => {
         setIsLoading(true);
-        const res = await updateFolder(folder.id, { name: newName });
+        // We reuse updateFolder because our API is generic on PATCH /files
+        const res = await updateFolder(file.id, { name: newName });
 
         if (res.error) {
             setIsLoading(false);
@@ -83,9 +97,9 @@ export function FolderActions({ folder }: FolderActionsProps) {
                     e.stopPropagation();
                     setIsOpen(!isOpen);
                 }}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors bg-white/50 backdrop-blur-sm"
             >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : <MoreVertical className="w-4 h-4 text-gray-400" />}
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : <MoreVertical className="w-4 h-4 text-gray-600" />}
             </button>
 
             {isOpen && (
@@ -100,24 +114,20 @@ export function FolderActions({ folder }: FolderActionsProps) {
                     />
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-20 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
+                        {/* Download */}
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsOpen(false);
+                                handleDownload();
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
+                        >
+                            <Download className="w-3.5 h-3.5" />
+                            Download
+                        </button>
 
-                        {/* Rename - Hidden for system folders */}
-                        {!folder.isSystem && (
-                            <button
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setIsOpen(false);
-                                    setShowRenameModal(true);
-                                }}
-                                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
-                            >
-                                <Edit2 className="w-3.5 h-3.5" />
-                                Rename
-                            </button>
-                        )}
-
-                        {/* Privacy - Always available */}
                         <button
                             onClick={(e) => {
                                 e.preventDefault();
@@ -126,34 +136,37 @@ export function FolderActions({ folder }: FolderActionsProps) {
                             }}
                             className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
                         >
-                            {folder.isPublic ? <Lock className="w-3.5 h-3.5 text-amber-500" /> : <Unlock className="w-3.5 h-3.5 text-green-500" />}
-                            Make {folder.isPublic ? "Private" : "Public"}
+                            {file.isPublic ? <Lock className="w-3.5 h-3.5 text-amber-500" /> : <Unlock className="w-3.5 h-3.5 text-green-500" />}
+                            Make {file.isPublic ? "Private" : "Public"}
                         </button>
 
-                        {folder.isSystem === true && (
-                            <div className="px-4 py-2 text-xs text-amber-600 italic text-center border-b border-gray-100 mb-1 bg-amber-50">
-                                🔒 System Folder (Cannot rename or delete)
-                            </div>
-                        )}
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsOpen(false);
+                                setShowRenameModal(true);
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
+                        >
+                            <Edit2 className="w-3.5 h-3.5" />
+                            Rename
+                        </button>
 
-                        {/* Delete - Hidden for system folders */}
-                        {!folder.isSystem && (
-                            <>
-                                <div className="h-px bg-gray-100 my-1" />
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        setIsOpen(false);
-                                        setShowDeleteModal(true);
-                                    }}
-                                    className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-rose-600 hover:bg-rose-50"
-                                >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                    Delete
-                                </button>
-                            </>
-                        )}
+                        <div className="h-px bg-gray-100 my-1" />
+
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsOpen(false);
+                                setShowDeleteModal(true);
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-rose-600 hover:bg-rose-50"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                        </button>
                     </div>
                 </>
             )}
@@ -163,8 +176,8 @@ export function FolderActions({ folder }: FolderActionsProps) {
                 isOpen={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={handleDelete}
-                title="Delete Folder"
-                message={`Are you sure you want to delete "${folder.name}"? All contents will be permanently lost.`}
+                title="Delete File"
+                message={`Are you sure you want to delete "${file.name}"? This action cannot be undone.`}
                 confirmText="Delete"
                 confirmColor="bg-rose-600 hover:bg-rose-700"
                 isLoading={isLoading}
@@ -174,7 +187,7 @@ export function FolderActions({ folder }: FolderActionsProps) {
                 isOpen={showRenameModal}
                 onClose={() => setShowRenameModal(false)}
                 onConfirm={handleRename}
-                currentName={folder.name}
+                currentName={file.name}
                 isLoading={isLoading}
             />
 

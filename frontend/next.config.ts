@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 // Trigger restart for env load
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
+  },
   async rewrites() {
     return [
       {

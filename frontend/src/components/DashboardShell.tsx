@@ -17,6 +17,7 @@ export function DashboardShell({ children, user }: { children: React.ReactNode, 
                     { name: "Home", href: "/student/home" },
                     { name: "Routine", href: "/student/routine" },
                     { name: "Batch", href: "/student/batch" },
+                    { name: "Class Notice", href: "/student/class-notice" },
                     { name: "Resources", href: "/student/resources" },
                     { name: "Profile", href: "/student/profile" },
                 ];
@@ -25,9 +26,9 @@ export function DashboardShell({ children, user }: { children: React.ReactNode, 
                     { name: "Home", href: "/student/home" },
                     { name: "Routine", href: "/student/routine" },
                     { name: "Batch", href: "/student/batch" },
+                    { name: "Class Notice", href: "/student/class-notice" },
                     { name: "Resources", href: "/student/resources" },
                     { name: "Profile", href: "/student/profile" },
-                    { name: "Class Notice", href: "/student/class-management" },
                 ];
             case "TEACHER":
                 return [

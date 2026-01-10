@@ -7,6 +7,7 @@ import { useState } from "react";
 import { CreateFolderModal } from "./CreateFolderModal";
 import { UploadFileModal } from "./UploadFileModal";
 import { FolderActions } from "./FolderActions";
+import { FileActions } from "./FileActions";
 
 interface FolderBrowserProps {
     folders: any[];
@@ -78,7 +79,13 @@ export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId, ba
 
                         {/* Folder Actions Menu - Only show if not viewing others */}
                         {!isViewingOthers && (
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
+                            <div
+                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                }}
+                            >
                                 <FolderActions folder={folder} />
                             </div>
                         )}
@@ -97,17 +104,28 @@ export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId, ba
                 {visibleFiles.map((file) => (
                     <div
                         key={file.id}
+                        onClick={() => window.open(file.url, '_blank')}
                         className="group relative flex flex-col items-center justify-center p-6 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition cursor-pointer"
                     >
                         {!isViewingOthers && (
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
-                                <MoreVertical size={16} className="text-gray-400 hover:text-gray-600" />
+                            <div
+                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition z-10"
+                                onClick={(e) => {
+                                    e.stopPropagation(); // Prevent card click
+                                    e.preventDefault();
+                                }}
+                            >
+                                <FileActions file={file} />
                             </div>
                         )}
                         {/* Placeholder for file icon based on type */}
                         <FileText size={48} className="text-gray-400 mb-3 group-hover:scale-110 transition duration-300" />
                         <span className="text-sm font-medium text-gray-700 text-center truncate w-full">{file.name}</span>
-                        <span className="text-xs text-gray-400 mt-1">{(file.size / 1024).toFixed(1)} KB</span>
+                        <span className="text-xs text-gray-400 mt-1">
+                            {file.size < 1024 * 1024
+                                ? `${(file.size / 1024).toFixed(1)} KB`
+                                : `${(file.size / (1024 * 1024)).toFixed(1)} MB`}
+                        </span>
                     </div>
                 ))}
 

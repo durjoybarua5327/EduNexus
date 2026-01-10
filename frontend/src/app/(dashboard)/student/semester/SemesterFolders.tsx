@@ -117,11 +117,7 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
                                     {isExpanded ? <FolderOpen className="w-7 h-7" /> : <Folder className="w-7 h-7" />}
 
                                     {/* Sparkle indicator for current semester */}
-                                    {isCurrent && !isExpanded && (
-                                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg shadow-yellow-200/50 animate-pulse">
-                                            <Sparkles className="w-3 h-3 text-yellow-900" />
-                                        </div>
-                                    )}
+
                                 </div>
 
                                 <div className="flex-1 min-w-0">

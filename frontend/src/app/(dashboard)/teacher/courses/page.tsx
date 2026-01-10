@@ -28,27 +28,19 @@ export default function TeacherCoursesPage() {
     return (
         <div className="p-6 md:p-8 space-y-8 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
 
-            {/* Hero Section */}
-            <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-violet-600 to-indigo-700 shadow-2xl shadow-indigo-200">
-                <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl"></div>
+            {/* Minimalist Header */}
+            <div className="relative mb-8">
+                <div className="absolute -top-10 -left-10 w-32 h-32 bg-indigo-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+                <div className="absolute top-0 right-10 w-24 h-24 bg-violet-50 rounded-full blur-2xl opacity-60 pointer-events-none"></div>
 
-                <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-6 text-white">
-                    <div>
-                        <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tight flex items-center gap-3">
-                            <GraduationCap className="w-10 h-10 md:w-12 md:h-12 text-indigo-200" />
-                            Academic Panel
+                <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
+                    <div className="space-y-3">
+                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                            Academic <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Panel</span>
                         </h1>
-                        <p className="text-indigo-100 text-lg md:text-xl font-medium max-w-xl">
+                        <p className="text-slate-500 font-medium text-sm max-w-lg">
                             Welcome back, Professor. Overview of your assigned courses and academic schedule.
                         </p>
-                    </div>
-
-                    <div className="flex gap-4">
-                        <div className="bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/20 text-center">
-                            <div className="text-3xl font-bold">{loading ? "..." : courses.length}</div>
-                            <div className="text-xs font-semibold text-indigo-200 uppercase tracking-wider">Active Courses</div>
-                        </div>
                     </div>
                 </div>
             </div>

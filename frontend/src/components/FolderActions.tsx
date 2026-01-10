@@ -16,7 +16,7 @@ interface FolderActionsProps {
     };
 }
 
-export function FolderActions({ folder }: FolderActionsProps) {
+export function FolderActions({ folder, onSuccess }: FolderActionsProps & { onSuccess?: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -24,6 +24,11 @@ export function FolderActions({ folder }: FolderActionsProps) {
     const [errorMessage, setErrorMessage] = useState("");
     const [showErrorModal, setShowErrorModal] = useState(false);
     const router = useRouter();
+
+    const refreshData = () => {
+        if (onSuccess) onSuccess();
+        else router.refresh();
+    };
 
     const handleDelete = async () => {
         setIsLoading(true);
@@ -37,8 +42,7 @@ export function FolderActions({ folder }: FolderActionsProps) {
         } else {
             setShowDeleteModal(false);
             setIsOpen(false);
-            // Force fresh data fetch by replacing current URL
-            router.refresh();
+            refreshData();
             setIsLoading(false);
         }
     };
@@ -53,7 +57,7 @@ export function FolderActions({ folder }: FolderActionsProps) {
             setShowErrorModal(true);
         } else {
             setIsOpen(false);
-            router.refresh();
+            refreshData();
             setIsLoading(false);
         }
     };
@@ -70,7 +74,7 @@ export function FolderActions({ folder }: FolderActionsProps) {
         } else {
             setShowRenameModal(false);
             setIsOpen(false);
-            router.refresh();
+            refreshData();
             setIsLoading(false);
         }
     };
@@ -83,9 +87,9 @@ export function FolderActions({ folder }: FolderActionsProps) {
                     e.stopPropagation();
                     setIsOpen(!isOpen);
                 }}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors bg-white shadow-sm border border-slate-200"
             >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : <MoreVertical className="w-4 h-4 text-gray-400" />}
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-indigo-600" /> : <MoreVertical className="w-4 h-4 text-slate-600" />}
             </button>
 
             {isOpen && (
@@ -98,7 +102,7 @@ export function FolderActions({ folder }: FolderActionsProps) {
                             setIsOpen(false);
                         }}
                     />
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-20 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 z-20 py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200 ring-1 ring-slate-900/5">
 
 
                         {/* Rename - Hidden for system folders */}
@@ -110,9 +114,9 @@ export function FolderActions({ folder }: FolderActionsProps) {
                                     setIsOpen(false);
                                     setShowRenameModal(true);
                                 }}
-                                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
+                                className="w-full text-left px-4 py-3 text-sm flex items-center gap-3 text-slate-700 hover:bg-slate-50 transition-colors font-medium"
                             >
-                                <Edit2 className="w-3.5 h-3.5" />
+                                <Edit2 className="w-4 h-4 text-slate-400" />
                                 Rename
                             </button>
                         )}
@@ -124,22 +128,22 @@ export function FolderActions({ folder }: FolderActionsProps) {
                                 e.stopPropagation();
                                 handleTogglePrivacy();
                             }}
-                            className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
+                            className="w-full text-left px-4 py-3 text-sm flex items-center gap-3 text-slate-700 hover:bg-slate-50 transition-colors font-medium"
                         >
-                            {folder.isPublic ? <Lock className="w-3.5 h-3.5 text-amber-500" /> : <Unlock className="w-3.5 h-3.5 text-green-500" />}
+                            {folder.isPublic ? <Lock className="w-4 h-4 text-amber-500" /> : <Unlock className="w-4 h-4 text-emerald-500" />}
                             Make {folder.isPublic ? "Private" : "Public"}
                         </button>
 
                         {folder.isSystem === true && (
-                            <div className="px-4 py-2 text-xs text-amber-600 italic text-center border-b border-gray-100 mb-1 bg-amber-50">
-                                🔒 System Folder (Cannot rename or delete)
+                            <div className="px-4 py-2 text-xs text-amber-600 italic text-center border-b border-slate-100 mb-1 bg-amber-50 font-medium">
+                                System Folder
                             </div>
                         )}
 
                         {/* Delete - Hidden for system folders */}
                         {!folder.isSystem && (
                             <>
-                                <div className="h-px bg-gray-100 my-1" />
+                                <div className="h-px bg-slate-100 my-1 mx-4" />
                                 <button
                                     onClick={(e) => {
                                         e.preventDefault();
@@ -147,9 +151,9 @@ export function FolderActions({ folder }: FolderActionsProps) {
                                         setIsOpen(false);
                                         setShowDeleteModal(true);
                                     }}
-                                    className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-rose-600 hover:bg-rose-50"
+                                    className="w-full text-left px-4 py-3 text-sm flex items-center gap-3 text-rose-600 hover:bg-rose-50 transition-colors font-medium"
                                 >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <Trash2 className="w-4 h-4" />
                                     Delete
                                 </button>
                             </>

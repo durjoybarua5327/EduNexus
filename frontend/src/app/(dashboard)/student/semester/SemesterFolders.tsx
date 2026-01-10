@@ -57,20 +57,19 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
                 return (
                     <motion.div
                         key={sem}
-                        layout="position"
-                        layoutId={`semester-folder-${sem}`}
+                        layout // Use simple layout prop for automatic size/position animation
                         variants={{
-                            hidden: { opacity: 0, y: 30 },
+                            hidden: { opacity: 0, y: 20 },
                             visible: {
                                 opacity: 1,
                                 y: 0,
-                                transition: { type: "spring", stiffness: 260, damping: 20 }
+                                transition: { type: "spring", stiffness: 300, damping: 25 }
                             }
                         }}
-                        whileHover={!isExpanded ? { y: -8, scale: 1.02 } : {}}
+                        whileHover={!isExpanded ? { y: -5, scale: 1.01 } : {}}
                         transition={{
-                            layout: { type: "spring", stiffness: 300, damping: 35, mass: 0.8 },
-                            type: "spring", stiffness: 400, damping: 30
+                            layout: { duration: 0.4, ease: [0.25, 1, 0.5, 1] }, // Use bezier for smoother layout expansion
+                            type: "spring", stiffness: 300, damping: 30
                         }}
                         className={`group relative ${isExpanded ? 'col-span-full md:col-span-2 lg:col-span-3' : ''}`}
                     >
@@ -221,11 +220,10 @@ export function SemesterFolders({ semesters, currentSemester, departmentId, base
                                                                             <BookOpen className="w-5 h-5" />
                                                                         </div>
                                                                         <div className="flex-1 min-w-0">
-                                                                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                                                            <div>
                                                                                 <span className="text-xs font-black px-2.5 py-1 bg-gradient-to-r from-indigo-100 to-violet-100 text-indigo-700 rounded-lg tracking-wide">
                                                                                     {course.code}
                                                                                 </span>
-                                                                                <span className="text-xs text-slate-400 font-semibold">{course.credit} Cr</span>
                                                                             </div>
                                                                             <h4 className="font-bold text-slate-900 line-clamp-2 leading-snug group-hover/card:text-indigo-700 transition-colors">
                                                                                 {course.name}

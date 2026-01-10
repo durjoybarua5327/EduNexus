@@ -27,7 +27,7 @@ export default async function ResourcesPage({
     // View: Specific functionality (Course Folder Browser)
     if (courseId) {
         // Fetch course details and folder contents
-        const [courseDetails, { folders, files }] = await Promise.all([
+        const [courseDetails, { folders, files, breadcrumbs }] = await Promise.all([
             getCourseById(courseId),
             getFolderContents(folderId, undefined, courseId)
         ]);
@@ -57,10 +57,12 @@ export default async function ResourcesPage({
                     <FolderBrowser
                         folders={folders || []}
                         files={files || []}
-                        breadcrumbs={folderId ? [{ id: folderId, name: 'Current Folder' }] : []}
+                        breadcrumbs={breadcrumbs || []}
                         currentFolderId={folderId}
                         basePath={basePath}
                         allowUploads={false}
+                        rootTitle={courseDisplayName}
+                        readOnly={true}
                     />
                 </div>
             </div>

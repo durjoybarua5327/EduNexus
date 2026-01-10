@@ -8,11 +8,19 @@ export async function GET(req: Request) {
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
-    const parentId = searchParams.get("parentId") === "root" ? null : searchParams.get("parentId");
+    let parentId = searchParams.get("parentId") === "root" ? null : searchParams.get("parentId");
     const ownerId = searchParams.get("ownerId");
     const courseId = searchParams.get("courseId");
 
     try {
+        // Auto-resolve Course Root: If viewing a course root, retrieve its contents instead of the folder itself
+        if (courseId && !parentId) {
+            const [courseRoots] = await pool.query<any[]>("SELECT id FROM Folder WHERE courseId = ? AND parentId IS NULL LIMIT 1", [courseId]);
+            if (courseRoots.length > 0) {
+                parentId = courseRoots[0].id;
+            }
+        }
+
         let folderQuery = "SELECT * FROM Folder WHERE parentId ";
         let fileQuery = "SELECT * FROM File WHERE folderId ";
         const params: any[] = [];
@@ -70,18 +78,14 @@ export async function GET(req: Request) {
                 log(`SYNC: User found: ${user?.role} ${user?.departmentId}`);
 
                 if (user && (user.role === 'STUDENT' || user.role === 'CR')) {
+                    // ... existing student sync logic ...
                     // Get Student Profile to find Batch (applicable for both STUDENT and CR)
                     const [profiles] = await pool.query<any[]>("SELECT batchId FROM StudentProfile WHERE userId = ?", [ownerId]);
                     const profile = profiles[0];
-                    log(`SYNC: Profile found: ${profile?.batchId}`);
-
                     if (profile?.batchId) {
-                        // Create folders for ALL semesters (1st through 8th)
                         const allSemesters = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
-
                         for (const semesterName of allSemesters) {
                             const folderName = `${semesterName} Semester`;
-
                             // 1. Check/Create Root Semester Folder
                             const [existingSemFolder] = await pool.query<any[]>(
                                 "SELECT id FROM Folder WHERE ownerId = ? AND name = ? AND parentId IS NULL",
@@ -89,18 +93,15 @@ export async function GET(req: Request) {
                             );
 
                             let semFolderId = existingSemFolder[0]?.id;
-
                             if (!semFolderId) {
                                 semFolderId = 'folder-sys-' + semesterName + '-' + ownerId + '-' + Date.now();
                                 await pool.query(
                                     "INSERT INTO Folder (id, name, parentId, ownerId, isPublic, isSystem) VALUES (?, ?, NULL, ?, ?, ?)",
                                     [semFolderId, folderName, ownerId, false, true]
                                 );
-                                log(`SYNC: Created Sem Folder: ${folderName}`);
                             }
 
-                            // 2. Sync Course Folders inside Semester Folder
-                            // Get courses for this specific semester
+                            // 2. Sync Course Folders
                             const [semester] = await pool.query<any[]>(
                                 "SELECT id FROM Semester WHERE departmentId = ? AND name = ?",
                                 [user.departmentId, semesterName]
@@ -111,15 +112,11 @@ export async function GET(req: Request) {
                                     "SELECT id, name, code FROM Course WHERE semesterId = ?",
                                     [semester[0].id]
                                 );
-                                log(`SYNC: Courses found for ${semesterName}: ${courses?.length}`);
-
                                 for (const course of courses) {
-                                    // Check/Create Course Folder
                                     const [existingCourseFolder] = await pool.query<any[]>(
                                         "SELECT id FROM Folder WHERE ownerId = ? AND parentId = ? AND courseId = ?",
                                         [ownerId, semFolderId, course.id]
                                     );
-
                                     if (existingCourseFolder.length === 0) {
                                         const courseFolderId = 'folder-sys-' + course.id + '-' + ownerId + '-' + Date.now();
                                         const displayName = course.code ? `${course.code} - ${course.name}` : course.name;
@@ -127,12 +124,36 @@ export async function GET(req: Request) {
                                             "INSERT INTO Folder (id, name, parentId, ownerId, isPublic, isSystem, courseId) VALUES (?, ?, ?, ?, ?, ?, ?)",
                                             [courseFolderId, displayName, semFolderId, ownerId, false, true, course.id]
                                         );
-                                        log(`SYNC: Created Course Folder: ${displayName}`);
                                     }
                                 }
-                            } else {
-                                log(`SYNC: No semester record found for ${user.departmentId} ${semesterName}`);
                             }
+                        }
+                    }
+                } else if (user && user.role === 'TEACHER') {
+                    // TEACHER SYNC LOGIC
+                    // Teachers get Root Folders for each of their Courses
+                    const [courses] = await pool.query<any[]>(
+                        "SELECT id, name, code FROM Course WHERE teacherId = ?",
+                        [ownerId]
+                    );
+                    log(`SYNC: Teacher has ${courses.length} courses`);
+
+                    for (const course of courses) {
+                        const displayName = course.code ? `${course.code} - ${course.name}` : course.name;
+
+                        // Check if root folder exists for this course
+                        const [existingFolder] = await pool.query<any[]>(
+                            "SELECT id FROM Folder WHERE ownerId = ? AND parentId IS NULL AND courseId = ?",
+                            [ownerId, course.id]
+                        );
+
+                        if (existingFolder.length === 0) {
+                            const folderId = 'folder-sys-' + course.id + '-' + ownerId + '-' + Date.now();
+                            await pool.query(
+                                "INSERT INTO Folder (id, name, parentId, ownerId, isPublic, isSystem, courseId) VALUES (?, ?, NULL, ?, ?, ?, ?)",
+                                [folderId, displayName, ownerId, false, true, course.id]
+                            );
+                            log(`SYNC: Created Teacher Root Folder: ${displayName}`);
                         }
                     }
                 }

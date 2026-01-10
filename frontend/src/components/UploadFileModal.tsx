@@ -6,10 +6,10 @@ import { UploadCloud, X } from "lucide-react";
 import { uploadFile } from "@/lib/actions/files";
 import { useRouter } from "next/navigation";
 
-export function UploadFileModal({ folderId }: { folderId: string | null }) {
+export function UploadFileModal({ folderId, onSuccess }: { folderId: string | null, onSuccess?: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const router = useRouter();
 
     async function handleSubmit(formData: FormData) {
@@ -17,6 +17,11 @@ export function UploadFileModal({ folderId }: { folderId: string | null }) {
             alert("Please select a folder first");
             return;
         }
+        if (selectedFiles.length === 0) {
+            alert("Please select at least one file");
+            return;
+        }
+
         setLoading(true);
         formData.append('folderId', folderId);
 
@@ -26,8 +31,12 @@ export function UploadFileModal({ folderId }: { folderId: string | null }) {
             alert(res.error);
         } else {
             setIsOpen(false);
-            setSelectedFile(null); // Reset
-            router.refresh();
+            setSelectedFiles([]); // Reset
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                router.refresh();
+            }
         }
     }
 
@@ -49,29 +58,39 @@ export function UploadFileModal({ folderId }: { folderId: string | null }) {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex justify-between items-center p-4 border-b">
-                            <h3 className="text-lg font-semibold">Upload File</h3>
+                            <h3 className="text-lg font-semibold">Upload Files</h3>
                             <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-700">
                                 <X size={20} />
                             </button>
                         </div>
                         <form action={handleSubmit} className="p-4 space-y-4">
-                            <div className={`border-2 border-dashed rounded-lg p-8 text-center transition cursor-pointer relative ${selectedFile ? 'border-indigo-300 bg-indigo-50' : 'border-gray-300 hover:bg-gray-50'}`}>
+                            <div className={`border-2 border-dashed rounded-lg p-8 text-center transition cursor-pointer relative ${selectedFiles.length > 0 ? 'border-indigo-300 bg-indigo-50' : 'border-gray-300 hover:bg-gray-50'}`}>
                                 <input
                                     type="file"
                                     name="file"
                                     required
+                                    multiple
                                     className="absolute inset-0 opacity-0 cursor-pointer"
                                     onChange={(e) => {
-                                        if (e.target.files?.[0]) {
-                                            setSelectedFile(e.target.files[0]);
+                                        if (e.target.files && e.target.files.length > 0) {
+                                            setSelectedFiles(Array.from(e.target.files));
                                         }
                                     }}
                                 />
-                                <UploadCloud size={32} className={`mx-auto mb-2 ${selectedFile ? 'text-indigo-500' : 'text-gray-400'}`} />
+                                <UploadCloud size={32} className={`mx-auto mb-2 ${selectedFiles.length > 0 ? 'text-indigo-500' : 'text-gray-400'}`} />
                                 <p className="text-sm text-gray-500 truncate px-2">
-                                    {selectedFile ? selectedFile.name : "Click or drag file to upload"}
+                                    {selectedFiles.length > 0
+                                        ? `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected`
+                                        : "Click or drag files to upload"}
                                 </p>
-                                {selectedFile && <p className="text-xs text-indigo-600 mt-1 font-medium">Click to change</p>}
+                                {selectedFiles.length > 0 && (
+                                    <div className="mt-2 text-xs text-slate-500 max-h-20 overflow-y-auto">
+                                        {selectedFiles.map((f, i) => (
+                                            <div key={i} className="truncate">{f.name}</div>
+                                        ))}
+                                    </div>
+                                )}
+                                {selectedFiles.length > 0 && <p className="text-xs text-indigo-600 mt-2 font-medium">Click to select different files</p>}
                             </div>
 
                             <div className="pt-2">

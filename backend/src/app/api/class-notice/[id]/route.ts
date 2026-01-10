@@ -3,10 +3,12 @@ import pool from "@/lib/db";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+const ALLOWED_ROLES = ["CR", "TEACHER", "DEPT_ADMIN"];
+
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const session = await auth();
-        if (!session?.user || session.user.role !== "CR") {
+        if (!session?.user || !ALLOWED_ROLES.includes(session.user.role)) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -37,7 +39,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const session = await auth();
-        if (!session?.user || session.user.role !== "CR") {
+        if (!session?.user || !ALLOWED_ROLES.includes(session.user.role)) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 

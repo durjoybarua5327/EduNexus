@@ -12,20 +12,23 @@ const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 interface PostClassNoticeFormProps {
     onSuccess?: () => void;
     onCancel?: () => void;
+    initialData?: any;
 }
 
-export function PostClassNoticeForm({ onSuccess, onCancel }: PostClassNoticeFormProps) {
+export function PostClassNoticeForm({ onSuccess, onCancel, initialData }: PostClassNoticeFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [formData, setFormData] = useState({
-        title: "",
-        description: "",
-        expiryDate: "",
-        isPinned: false,
-        priority: "MEDIUM", // Default priority
-        tags: [] as string[]
+        title: initialData?.title || "",
+        description: initialData?.description || "",
+        expiryDate: initialData?.expiryDate ? new Date(initialData.expiryDate).toISOString().split('T')[0] : "",
+        isPinned: initialData?.isPinned || false,
+        priority: initialData?.priority || "MEDIUM",
+        tags: initialData?.tags || [] as string[]
     });
+
+    const isEditing = !!initialData;
 
     const modules = {
         toolbar: [
@@ -42,8 +45,11 @@ export function PostClassNoticeForm({ onSuccess, onCancel }: PostClassNoticeForm
         setStatus('idle');
 
         try {
-            const res = await fetch("/api/class-notice", {
-                method: "POST",
+            const url = isEditing ? `/api/class-notice/${initialData.id}` : "/api/class-notice";
+            const method = isEditing ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method: method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData)
             });
@@ -144,7 +150,7 @@ export function PostClassNoticeForm({ onSuccess, onCancel }: PostClassNoticeForm
                     className="flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                 >
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Megaphone className="w-5 h-5" />}
-                    {loading ? "Posting..." : "Post Notice"}
+                    {loading ? (isEditing ? "Updating..." : "Posting...") : (isEditing ? "Update Notice" : "Post Notice")}
                 </button>
             </div>
 

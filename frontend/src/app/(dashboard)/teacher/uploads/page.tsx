@@ -1,37 +1,88 @@
 "use client";
 
-import { UploadCloud, File, Calendar, HardDrive, Trash2, Link as LinkIcon, ExternalLink, Download } from "lucide-react";
-import { useState } from "react";
+import { UploadCloud, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useUser } from "@/context/user-context";
+import { FolderBrowser } from "@/components/FolderBrowser";
+import { fetchAPI } from "@/lib/api";
+import { useSearchParams } from "next/navigation";
 
-export default function GenericTeacherPage() {
-    // This is for Uploads
-    const [activeTab, setActiveTab] = useState('all');
+export default function TeacherUploadsPage() {
+    const { user } = useUser();
+    const searchParams = useSearchParams();
+    const folderId = searchParams.get("folderId") || null;
+
+    const [data, setData] = useState<{ folders: any[]; files: any[]; breadcrumbs: any[] }>({
+        folders: [],
+        files: [],
+        breadcrumbs: []
+    });
+    const [loading, setLoading] = useState(true);
+
+    const fetchFolders = async () => {
+        // Only show full loading on first load, otherwise subtle update?
+        // Actually for now let's just re-fetch gracefully
+        if (!data.folders.length) setLoading(true);
+
+        try {
+            const url = folderId
+                ? `/files?ownerId=${user?.id}&parentId=${folderId}`
+                : `/files?ownerId=${user?.id}`;
+
+            const res = await fetchAPI(url);
+            if (res) {
+                setData(res);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (user?.id) {
+            fetchFolders();
+        }
+    }, [user?.id, folderId]);
 
     return (
         <div className="p-6 md:p-8 space-y-8 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
-            {/* Hero Section */}
-            <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-indigo-500 to-violet-600 shadow-2xl shadow-indigo-200">
-                <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 bg-fuchsia-500/20 rounded-full blur-3xl"></div>
+            {/* Minimalist Header */}
+            <div className="relative mb-8">
+                <div className="absolute -top-10 -left-10 w-32 h-32 bg-indigo-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+                <div className="absolute top-0 right-10 w-24 h-24 bg-violet-50 rounded-full blur-2xl opacity-60 pointer-events-none"></div>
 
-                <div className="relative z-10 p-8 md:p-12 text-white">
-                    <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tight flex items-center gap-3">
-                        <UploadCloud className="w-10 h-10 md:w-12 md:h-12 text-indigo-200" />
-                        My Uploads
-                    </h1>
-                    <p className="text-indigo-100 text-lg md:text-xl font-medium max-w-xl">
-                        Manage your shared resources, lecture notes, and assignments across all your courses.
-                    </p>
+                <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
+                    <div className="space-y-3">
+                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                            My <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Uploads</span>
+                        </h1>
+                        <p className="text-slate-500 font-medium text-sm max-w-lg">
+                            Manage your course materials. Folders for your courses are created automatically.
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 p-6 min-h-[400px] flex flex-col items-center justify-center text-center">
-                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                    <HardDrive className="w-8 h-8 text-slate-300" />
+            {loading ? (
+                <div className="flex justify-center py-32">
+                    <Loader2 className="w-12 h-12 animate-spin text-indigo-600" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-800">No Uploads Yet</h3>
-                <p className="text-slate-500 mt-2 max-w-sm">Files you upload to your courses will appear here for easy management.</p>
-            </div>
+            ) : (
+                <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 p-6 md:p-8 min-h-[500px]">
+                    <FolderBrowser
+                        folders={data.folders}
+                        files={data.files}
+                        breadcrumbs={data.breadcrumbs}
+                        currentFolderId={folderId}
+                        basePath={`/teacher/uploads`}
+                        allowUploads={true} // Enabled so they can upload inside folders
+                        onRefresh={fetchFolders}
+                    // Note: Permissions to delete system folders are handled by backend & UI checks
+                    />
+                </div>
+            )}
         </div>
     );
 }

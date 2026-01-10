@@ -6,7 +6,7 @@ import { Plus, X, FolderPlus } from "lucide-react";
 import { createFolder } from "@/lib/actions/files";
 import { useRouter } from "next/navigation";
 
-export function CreateFolderModal({ parentId, showPrivacy = false }: { parentId: string | null, showPrivacy?: boolean }) {
+export function CreateFolderModal({ parentId, showPrivacy = false, onSuccess }: { parentId: string | null, showPrivacy?: boolean, onSuccess?: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -22,7 +22,11 @@ export function CreateFolderModal({ parentId, showPrivacy = false }: { parentId:
             alert("Failed to create folder");
         } else {
             setIsOpen(false);
-            router.refresh(); // Refresh page data
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                router.refresh();
+            }
         }
     }
 

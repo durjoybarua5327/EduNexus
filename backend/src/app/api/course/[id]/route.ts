@@ -27,7 +27,25 @@ export async function GET(
             return NextResponse.json({ error: "Course not found" }, { status: 404 });
         }
 
-        return NextResponse.json(courses[0]);
+        const course = courses[0];
+
+        // Count students: Students in the same department who are in a batch where currentSemester matches course semester
+        // We assume students are effectively enrolled if they are in the batch corresponding to this semester
+        let studentCount = 0;
+        if (course.departmentId && course.semesterName) {
+            const [countResult] = await pool.query<any[]>(`
+                SELECT COUNT(distinct sp.userId) as count
+                FROM StudentProfile sp
+                JOIN User u ON sp.userId = u.id
+                JOIN Batch b ON sp.batchId = b.id
+                WHERE u.departmentId = ? 
+                AND b.currentSemester = ?
+            `, [course.departmentId, course.semesterName]);
+
+            studentCount = countResult[0]?.count || 0;
+        }
+
+        return NextResponse.json({ ...course, studentCount });
     } catch (error) {
         console.error("Error fetching course:", error);
         return NextResponse.json({ error: "Failed to fetch course" }, { status: 500 });

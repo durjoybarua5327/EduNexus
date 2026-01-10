@@ -22,10 +22,14 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
         }
     }
 
-    const res = await fetch(`${BACKEND_URL}${endpoint}`, {
+    // Determine URL: if server-side, use BACKEND_URL; if client-side, use relative path (proxy)
+    const isServer = typeof window === 'undefined';
+    const url = isServer ? `${BACKEND_URL}${endpoint}` : `/api${endpoint}`;
+
+    const res = await fetch(url, {
         ...options,
         headers: headersConfig,
-        cache: options.cache || 'no-store' // Default to no-store for dynamic data
+        cache: options.cache || 'no-store'
     });
 
     if (!res.ok) {

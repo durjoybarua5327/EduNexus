@@ -16,7 +16,7 @@ interface FileActionsProps {
     };
 }
 
-export function FileActions({ file }: FileActionsProps) {
+export function FileActions({ file, onSuccess }: FileActionsProps & { onSuccess?: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -25,8 +25,10 @@ export function FileActions({ file }: FileActionsProps) {
     const [showErrorModal, setShowErrorModal] = useState(false);
     const router = useRouter();
 
-
-
+    const refreshData = () => {
+        if (onSuccess) onSuccess();
+        else router.refresh();
+    };
 
 
     const handleDownload = () => {
@@ -51,7 +53,7 @@ export function FileActions({ file }: FileActionsProps) {
         } else {
             setShowDeleteModal(false);
             setIsOpen(false);
-            router.refresh();
+            refreshData();
             setIsLoading(false);
         }
     };
@@ -66,7 +68,7 @@ export function FileActions({ file }: FileActionsProps) {
             setShowErrorModal(true);
         } else {
             setIsOpen(false);
-            router.refresh();
+            refreshData();
             setIsLoading(false);
         }
     };
@@ -84,7 +86,7 @@ export function FileActions({ file }: FileActionsProps) {
         } else {
             setShowRenameModal(false);
             setIsOpen(false);
-            router.refresh();
+            refreshData();
             setIsLoading(false);
         }
     };
@@ -97,9 +99,9 @@ export function FileActions({ file }: FileActionsProps) {
                     e.stopPropagation();
                     setIsOpen(!isOpen);
                 }}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors bg-white/50 backdrop-blur-sm"
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors bg-white shadow-sm border border-slate-200"
             >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : <MoreVertical className="w-4 h-4 text-gray-600" />}
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-indigo-600" /> : <MoreVertical className="w-4 h-4 text-slate-600" />}
             </button>
 
             {isOpen && (
@@ -112,7 +114,7 @@ export function FileActions({ file }: FileActionsProps) {
                             setIsOpen(false);
                         }}
                     />
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-20 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 z-20 py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200 ring-1 ring-slate-900/5">
 
                         {/* Download */}
                         <button
@@ -122,9 +124,9 @@ export function FileActions({ file }: FileActionsProps) {
                                 setIsOpen(false);
                                 handleDownload();
                             }}
-                            className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
+                            className="w-full text-left px-4 py-3 text-sm flex items-center gap-3 text-slate-700 hover:bg-slate-50 transition-colors font-medium"
                         >
-                            <Download className="w-3.5 h-3.5" />
+                            <Download className="w-4 h-4 text-slate-400" />
                             Download
                         </button>
 
@@ -134,9 +136,9 @@ export function FileActions({ file }: FileActionsProps) {
                                 e.stopPropagation();
                                 handleTogglePrivacy();
                             }}
-                            className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
+                            className="w-full text-left px-4 py-3 text-sm flex items-center gap-3 text-slate-700 hover:bg-slate-50 transition-colors font-medium"
                         >
-                            {file.isPublic ? <Lock className="w-3.5 h-3.5 text-amber-500" /> : <Unlock className="w-3.5 h-3.5 text-green-500" />}
+                            {file.isPublic ? <Lock className="w-4 h-4 text-amber-500" /> : <Unlock className="w-4 h-4 text-emerald-500" />}
                             Make {file.isPublic ? "Private" : "Public"}
                         </button>
 
@@ -147,13 +149,13 @@ export function FileActions({ file }: FileActionsProps) {
                                 setIsOpen(false);
                                 setShowRenameModal(true);
                             }}
-                            className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
+                            className="w-full text-left px-4 py-3 text-sm flex items-center gap-3 text-slate-700 hover:bg-slate-50 transition-colors font-medium"
                         >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            <Edit2 className="w-4 h-4 text-slate-400" />
                             Rename
                         </button>
 
-                        <div className="h-px bg-gray-100 my-1" />
+                        <div className="h-px bg-slate-100 my-1 mx-4" />
 
                         <button
                             onClick={(e) => {
@@ -162,9 +164,9 @@ export function FileActions({ file }: FileActionsProps) {
                                 setIsOpen(false);
                                 setShowDeleteModal(true);
                             }}
-                            className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-rose-600 hover:bg-rose-50"
+                            className="w-full text-left px-4 py-3 text-sm flex items-center gap-3 text-rose-600 hover:bg-rose-50 transition-colors font-medium"
                         >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                             Delete
                         </button>
                     </div>

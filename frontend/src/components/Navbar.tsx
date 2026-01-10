@@ -178,7 +178,16 @@ export function Navbar({ user, links = [], onMenuClick }: NavbarProps) {
                                             {user?.role?.replace('_', ' ')}
                                         </span>
                                     </div>
-                                    <div className="p-1.5">
+                                    <div className="p-1.5 space-y-1">
+                                        <Link
+                                            href="/student/profile"
+                                            onClick={() => setIsProfileOpen(false)}
+                                            className="flex w-full items-center px-4 py-2 text-xs text-slate-600 rounded-xl hover:bg-slate-50 hover:text-indigo-600 transition-colors font-bold"
+                                            role="menuitem"
+                                        >
+                                            <User className="w-3.5 h-3.5 mr-2" />
+                                            Your Profile
+                                        </Link>
                                         <button
                                             onClick={() => signOut()}
                                             className="flex w-full items-center px-4 py-2 text-xs text-rose-600 rounded-xl hover:bg-rose-50 transition-colors font-bold group"

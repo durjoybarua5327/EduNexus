@@ -22,7 +22,8 @@ type AuditAction =
     | 'NOTICE_CREATED'
     | 'NOTICE_UPDATED'
     | 'NOTICE_DELETED'
-    | 'CONTENT_REMOVED';
+    | 'CONTENT_REMOVED'
+    | 'USER_DELETED';
 
 export async function logAudit(action: AuditAction, actorId: string, details: string, targetId?: string) {
     try {

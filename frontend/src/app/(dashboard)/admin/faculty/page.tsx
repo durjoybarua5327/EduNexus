@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useUser } from "@/context/user-context";
-import { Plus, Search, Mail, Phone, Briefcase, Trash2, Edit, Ban, CheckCircle, GraduationCap, Loader2 } from "lucide-react";
+import { Plus, Search, Mail, Phone, Briefcase, Trash2, Edit, Ban, CheckCircle, GraduationCap, Loader2, Eye, EyeOff, Wand2 } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import toast from "react-hot-toast";
@@ -23,6 +23,7 @@ export default function FacultyPage() {
     // Modals
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     // Data
     const [editTarget, setEditTarget] = useState<any>(null);
@@ -48,6 +49,16 @@ export default function FacultyPage() {
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
     }
+
+    const generatePassword = () => {
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+        let retVal = "";
+        for (let i = 0, n = charset.length; i < 12; ++i) {
+            retVal += charset.charAt(Math.floor(Math.random() * n));
+        }
+        setFormData(prev => ({ ...prev, password: retVal }));
+        setShowPassword(true);
+    };
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -131,6 +142,31 @@ export default function FacultyPage() {
         setIsEditOpen(true);
     }
 
+    async function handleDelete(teacher: any) {
+        setConfirmAction({
+            title: "Delete Faculty Member",
+            message: `Are you sure you want to permanently delete current ${teacher.name}? This action cannot be undone.`,
+            isDanger: true,
+            confirmText: "Delete Forever",
+            onConfirm: async () => {
+                try {
+                    const res = await fetch("/api/dept/faculty", {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: teacher.id, departmentId: deptId }),
+                    });
+                    if (res.ok) {
+                        toast.success("Faculty deleted");
+                        fetchFaculty();
+                    } else {
+                        toast.error("Delete failed");
+                    }
+                } catch (e) { toast.error("An error occurred"); }
+                finally { setConfirmAction(null); }
+            }
+        });
+    }
+
     const filtered = faculty.filter(f =>
         f.name.toLowerCase().includes(search.toLowerCase()) ||
         f.email.toLowerCase().includes(search.toLowerCase())
@@ -202,9 +238,14 @@ export default function FacultyPage() {
                                     </div>
                                 </div>
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => openEdit(teacher)} className="p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors">
-                                        <Edit className="w-4 h-4" />
-                                    </button>
+                                    <div className="flex gap-1">
+                                        <button onClick={() => openEdit(teacher)} className="p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors" title="Edit Profile">
+                                            <Edit className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => handleDelete(teacher)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete Account">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -262,14 +303,32 @@ export default function FacultyPage() {
                             placeholder="john.doe@university.edu"
                             value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
                     </div>
-                    {!editTarget && (
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Temporary Password</label>
-                            <input type="password" className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 outline-none transition-all placeholder:text-slate-300 font-medium" required minLength={6}
-                                placeholder="••••••••"
-                                value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="block text-sm font-medium text-slate-700">Password {editTarget && <span className="text-slate-400 font-normal ml-1">(Optional)</span>}</label>
+                            <button type="button" onClick={generatePassword} className="text-xs font-bold text-violet-600 hover:text-violet-700 flex items-center gap-1 transition-colors">
+                                <Wand2 className="w-3 h-3" /> Generate
+                            </button>
                         </div>
-                    )}
+                        <div className="relative">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 outline-none transition-all placeholder:text-slate-300 font-medium"
+                                required={!editTarget}
+                                minLength={6}
+                                placeholder={editTarget ? "Leave blank to keep current" : "Set a secure password"}
+                                value={formData.password}
+                                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
+                        </div>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Designation</label>
@@ -309,6 +368,6 @@ export default function FacultyPage() {
                 isDanger={confirmAction?.isDanger}
                 confirmText={confirmAction?.confirmText}
             />
-        </div>
+        </div >
     );
 }

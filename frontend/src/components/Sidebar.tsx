@@ -41,6 +41,7 @@ export function Sidebar({ isOpen, role }: SidebarProps) {
                     { name: "My Courses", href: "/teacher/courses", icon: BookOpen },
                     { name: "Uploads", href: "/teacher/uploads", icon: UploadCloud },
                     { name: "Notices", href: "/teacher/notices", icon: FileText },
+                    { name: "Profile", href: "/student/profile", icon: User },
                 ];
             case "DEPT_ADMIN":
                 return [

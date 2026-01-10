@@ -9,10 +9,10 @@ export const authConfig = {
             const isLoggedIn = !!auth?.user;
             // @ts-ignore
             const role = auth?.user?.role;
-            const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
+            const pathname = nextUrl.pathname;
 
-            // 1. Redirect authenticated users from generic /dashboard to role-specific pages
-            if (isLoggedIn && (nextUrl.pathname === '/dashboard' || nextUrl.pathname === '/' || nextUrl.pathname === '/login')) {
+            // 1. Initial Redirects
+            if (isLoggedIn && (pathname === '/dashboard' || pathname === '/' || pathname === '/login')) {
                 if (role === 'STUDENT' || role === 'CR') {
                     return Response.redirect(new URL('/student/home', nextUrl));
                 } else if (role === 'TEACHER') {
@@ -24,11 +24,47 @@ export const authConfig = {
                 }
             }
 
-            // 2. Protect routes
-            const isProtected = nextUrl.pathname.startsWith('/dashboard') ||
-                nextUrl.pathname.startsWith('/admin') ||
-                nextUrl.pathname.startsWith('/teacher') ||
-                nextUrl.pathname.startsWith('/student');
+            // 2. Strict Role Enforcement
+            if (isLoggedIn) {
+                // Prevent students from accessing admin/teacher routes
+                if ((role === 'STUDENT' || role === 'CR') &&
+                    (pathname.startsWith('/admin') || pathname.startsWith('/teacher') || pathname.startsWith('/superadmin'))) {
+                    return Response.redirect(new URL('/student/home', nextUrl));
+                }
+
+                // Prevent teachers from accessing admin/student routes (except shared ones if any)
+                // Prevent teachers from accessing admin/student routes (except shared ones if any)
+                if (role === 'TEACHER') {
+                    if (pathname.startsWith('/admin') || pathname.startsWith('/superadmin')) {
+                        return Response.redirect(new URL('/teacher/courses', nextUrl));
+                    }
+                    // Block student routes except profile (which is shared)
+                    if (pathname.startsWith('/student') && !pathname.startsWith('/student/profile')) {
+                        return Response.redirect(new URL('/teacher/courses', nextUrl));
+                    }
+                }
+
+                // Prevent Dept Admins from accessing other domains
+                if (role === 'DEPT_ADMIN') {
+                    if (pathname.startsWith('/superadmin') || pathname.startsWith('/student') || pathname.startsWith('/teacher')) {
+                        return Response.redirect(new URL('/admin/overview', nextUrl));
+                    }
+                }
+
+                // Prevent Super Admins from accessing other domains (optional but good for strictness)
+                if (role === 'SUPER_ADMIN') {
+                    if (pathname.startsWith('/admin') || pathname.startsWith('/student') || pathname.startsWith('/teacher')) {
+                        return Response.redirect(new URL('/super/universities', nextUrl));
+                    }
+                }
+            }
+
+            // 3. Protect routes from unauthenticated users
+            const isProtected = pathname.startsWith('/dashboard') ||
+                pathname.startsWith('/admin') ||
+                pathname.startsWith('/teacher') ||
+                pathname.startsWith('/student') ||
+                pathname.startsWith('/superadmin');
 
             if (isProtected) {
                 if (isLoggedIn) return true;

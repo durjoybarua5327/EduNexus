@@ -35,6 +35,7 @@ export function DashboardShell({ children, user }: { children: React.ReactNode, 
                     { name: "My Courses", href: "/teacher/courses" },
                     { name: "Uploads", href: "/teacher/uploads" },
                     { name: "Notices", href: "/teacher/notices" },
+                    { name: "Profile", href: "/student/profile" },
                 ];
             case "DEPT_ADMIN":
                 const deptLinks = [

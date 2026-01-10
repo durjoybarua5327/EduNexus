@@ -105,12 +105,20 @@ export async function PUT(req: Request) {
         }
 
         if (action === 'UPDATE_PROFILE') {
-            const { name, email, designation, phone } = data;
+            const { name, email, designation, phone, password } = data;
 
             const connection = await pool.getConnection();
             await connection.beginTransaction();
             try {
                 await connection.query("UPDATE User SET name = ?, email = ? WHERE id = ?", [name, email, id]);
+
+                // Update password if provided
+                if (password && password.length >= 6) {
+                    const bcrypt = await import("bcryptjs");
+                    const hashedPassword = await bcrypt.hash(password, 10);
+                    await connection.query("UPDATE User SET password = ? WHERE id = ?", [hashedPassword, id]);
+                }
+
                 await connection.query("UPDATE TeacherProfile SET designation = ?, contactInfo = ? WHERE userId = ?", [designation, phone, id]);
                 await connection.commit();
                 await logAudit('USER_UPDATED', 'system', `Updated faculty ${name}`, id);
@@ -128,5 +136,34 @@ export async function PUT(req: Request) {
     } catch (error) {
         console.error("Error updating faculty:", error);
         return NextResponse.json({ error: "Failed to update" }, { status: 500 });
+    }
+}
+
+export async function DELETE(req: Request) {
+    try {
+        const body = await req.json();
+        const { id, departmentId } = body;
+
+        if (!id || !departmentId) return NextResponse.json({ error: "ID required" }, { status: 400 });
+
+        // Check if user exists and belongs to department (optional validation)
+
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        try {
+            await connection.query("DELETE FROM TeacherProfile WHERE userId = ?", [id]);
+            await connection.query("DELETE FROM User WHERE id = ?", [id]);
+            await connection.commit();
+            await logAudit('USER_DELETED', 'system', `Deleted faculty ${id}`, id);
+            connection.release();
+            return NextResponse.json({ message: "Faculty deleted" });
+        } catch (e) {
+            await connection.rollback();
+            connection.release();
+            throw e;
+        }
+    } catch (error) {
+        console.error("Error deleting faculty:", error);
+        return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
     }
 }

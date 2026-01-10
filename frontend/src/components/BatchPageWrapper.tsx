@@ -8,9 +8,10 @@ interface BatchPageWrapperProps {
     students: any[];
     profile: any;
     userId: string;
+    isTopCR?: boolean;
 }
 
-export function BatchPageWrapper({ students, profile, userId }: BatchPageWrapperProps) {
+export function BatchPageWrapper({ students, profile, userId, isTopCR }: BatchPageWrapperProps) {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
     return (
@@ -42,7 +43,7 @@ export function BatchPageWrapper({ students, profile, userId }: BatchPageWrapper
                 initialStudents={students}
                 currentUserRole={profile.role}
                 currentUserId={userId}
-                currentUserIsTopCR={profile.isTopCR}
+                currentUserIsTopCR={isTopCR}
                 batchId={profile.batchId}
                 departmentId={profile.departmentId}
                 batchName={profile.batchName}

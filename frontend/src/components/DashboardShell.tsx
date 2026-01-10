@@ -22,7 +22,7 @@ export function DashboardShell({ children, user }: { children: React.ReactNode, 
                     { name: "Profile", href: "/student/profile" },
                 ];
             case "CR":
-                return [
+                const crLinks = [
                     { name: "Home", href: "/student/home" },
                     { name: "Routine", href: "/student/routine" },
                     { name: "Batch", href: "/student/batch" },
@@ -30,6 +30,11 @@ export function DashboardShell({ children, user }: { children: React.ReactNode, 
                     { name: "Resources", href: "/student/resources" },
                     { name: "Profile", href: "/student/profile" },
                 ];
+                // Add Manage CRs link if user is Top CR
+                if (user?.isTopCR) {
+                    crLinks.splice(3, 0, { name: "Manage CRs", href: "/student/manage-crs" });
+                }
+                return crLinks;
             case "TEACHER":
                 return [
                     { name: "My Courses", href: "/teacher/courses" },

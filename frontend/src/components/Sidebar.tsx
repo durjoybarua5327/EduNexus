@@ -13,29 +13,38 @@ import {
     FileText,
     Calendar,
     Building,
-    UploadCloud
+    UploadCloud,
+    Crown
 } from "lucide-react";
 import clsx from "clsx";
 
 interface SidebarProps {
     isOpen: boolean;
     role?: string;
+    isTopCR?: boolean;
 }
 
-export function Sidebar({ isOpen, role }: SidebarProps) {
+export function Sidebar({ isOpen, role, isTopCR }: SidebarProps) {
     const pathname = usePathname();
 
-    const getLinks = (role?: string) => {
+    const getLinks = (role?: string, isTopCR?: boolean) => {
         switch (role) {
             case "STUDENT":
             case "CR":
-                return [
+                const studentLinks = [
                     { name: "Home", href: "/student/home", icon: Home },
                     { name: "Routine", href: "/student/routine", icon: Calendar },
                     { name: "My Batch", href: "/student/batch", icon: Users },
                     { name: "Resources", href: "/student/resources", icon: BookOpen },
                     { name: "Profile", href: "/student/profile", icon: User },
                 ];
+
+                // Add Manage CRs link if user is Top CR
+                if (isTopCR) {
+                    studentLinks.splice(3, 0, { name: "Manage CRs", href: "/student/manage-crs", icon: Crown });
+                }
+
+                return studentLinks;
             case "TEACHER":
                 return [
                     { name: "My Courses", href: "/teacher/courses", icon: BookOpen },
@@ -64,7 +73,7 @@ export function Sidebar({ isOpen, role }: SidebarProps) {
         }
     };
 
-    const links = getLinks(role);
+    const links = getLinks(role, isTopCR);
 
     return (
         <aside

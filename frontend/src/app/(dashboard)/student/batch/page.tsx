@@ -9,6 +9,12 @@ async function getBatchmates(batchId: string) {
     return await fetchAPI(`/dept/students?batchId=${batchId}`) || [];
 }
 
+async function getUserIsTopCR(userId: string) {
+    // Fetch fresh isTopCR status from database
+    const userData = await fetchAPI(`/user/check-topcr?userId=${userId}`);
+    return userData?.isTopCR === 1 || userData?.isTopCR === true;
+}
+
 export default async function BatchPage() {
     const session = await auth();
     const user = session?.user;
@@ -35,6 +41,9 @@ export default async function BatchPage() {
 
     const students = await getBatchmates(profile.batchId);
 
+    // Fetch fresh isTopCR status from database (not from cached session)
+    const isTopCR = await getUserIsTopCR(user.id);
+
     // Sort: Teachers, then CRs, then Students
     students.sort((a: any, b: any) => {
         if (a.role === 'TEACHER') return -1;
@@ -44,5 +53,5 @@ export default async function BatchPage() {
         return a.name.localeCompare(b.name);
     });
 
-    return <BatchPageWrapper students={students} profile={profile} userId={user.id} />;
+    return <BatchPageWrapper students={students} profile={profile} userId={user.id} isTopCR={isTopCR} />;
 }

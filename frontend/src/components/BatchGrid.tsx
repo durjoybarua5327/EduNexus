@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, ShieldCheck, User, Star, Trash2, UserPlus, Pencil, GraduationCap, MoreHorizontal } from "lucide-react";
+import { Mail, ShieldCheck, User, Star, Trash2, UserPlus, Pencil, GraduationCap, MoreHorizontal, UserMinus, Crown } from "lucide-react";
 import { EditStudentModal } from "./EditStudentModal";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 interface BatchGridProps {
     students: any[];
@@ -18,22 +19,93 @@ interface BatchGridProps {
 
 export function BatchGrid({ students, currentUserRole, currentUserId, currentUserIsTopCR, batchId, departmentId, onStudentAdded }: BatchGridProps) {
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [promoteConfirm, setPromoteConfirm] = useState<{ id: string; name: string } | null>(null);
+    const [demoteConfirm, setDemoteConfirm] = useState<{ id: string; name: string } | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [editStudent, setEditStudent] = useState<any | null>(null);
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
 
     const isCR = currentUserRole === 'CR';
     const isTopCR = isCR && currentUserIsTopCR;
 
+    // DEBUG: Log component props
+    console.log('=== BatchGrid Debug ===', {
+        currentUserRole,
+        currentUserId,
+        currentUserIsTopCR,
+        isCR,
+        isTopCR,
+        studentsCount: students?.length
+    });
+
     const handleDelete = async (studentId: string) => {
         setIsDeleting(true);
         try {
-            // TODO: Implement API call to remove student
-            console.log('Delete student:', studentId);
-            setDeleteConfirm(null);
+            const res = await fetch(`/api/cr/remove-student?studentId=${studentId}`, {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                toast.success("Student removed from batch");
+                setDeleteConfirm(null);
+                if (onStudentAdded) onStudentAdded(); // Refresh the list
+            } else {
+                const error = await res.json();
+                toast.error(error.error || "Failed to remove student");
+            }
         } catch (error) {
             console.error('Failed to delete student:', error);
+            toast.error("An error occurred");
         } finally {
             setIsDeleting(false);
+        }
+    };
+
+    const handlePromoteToCR = async (studentId: string, studentName: string) => {
+        setPromoteConfirm(null);
+        setActionLoading(studentId);
+        try {
+            const res = await fetch('/api/cr/manage-crs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ studentId }),
+            });
+
+            if (res.ok) {
+                toast.success(`${studentName} promoted to CR`);
+                if (onStudentAdded) onStudentAdded();
+            } else {
+                const error = await res.json();
+                toast.error(error.error || "Failed to promote student");
+            }
+        } catch (error) {
+            console.error("Error promoting student:", error);
+            toast.error("An error occurred");
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleDemoteToStudent = async (userId: string, userName: string) => {
+        setDemoteConfirm(null);
+        setActionLoading(userId);
+        try {
+            const res = await fetch(`/api/cr/manage-crs?userId=${userId}`, {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                toast.success(`${userName} demoted to Student`);
+                if (onStudentAdded) onStudentAdded();
+            } else {
+                const error = await res.json();
+                toast.error(error.error || "Failed to demote CR");
+            }
+        } catch (error) {
+            console.error("Error demoting CR:", error);
+            toast.error("An error occurred");
+        } finally {
+            setActionLoading(null);
         }
     };
 
@@ -63,6 +135,17 @@ export function BatchGrid({ students, currentUserRole, currentUserId, currentUse
                 {students.map((student) => {
                     const isTeacher = student.role === 'TEACHER';
                     const isStudentCR = student.role === 'CR';
+                    const isLoadingAction = actionLoading === student.id;
+
+                    // DEBUG: Log button visibility conditions
+                    if (isStudentCR && !student.isTopCR) {
+                        console.log('Regular CR Found:', {
+                            name: student.name,
+                            studentIsTopCR: student.isTopCR,
+                            currentUserIsTopCR: isTopCR,
+                            shouldShowButtons: isTopCR && !isTeacher && student.id !== currentUserId
+                        });
+                    }
 
                     return (
                         <motion.div
@@ -163,25 +246,76 @@ export function BatchGrid({ students, currentUserRole, currentUserId, currentUse
                                             <User className="w-4 h-4" /> View Profile
                                         </Link>
 
-                                        {/* CR Actions */}
-                                        {isCR && !isTeacher && student.id !== currentUserId && (
-                                            (isTopCR ? !student.isTopCR : student.role === 'STUDENT')
-                                        ) && (
-                                                <div className="grid grid-cols-2 gap-2 mt-1">
+                                        {/* Top CR: Promote/Demote Buttons */}
+                                        {isTopCR && !isTeacher && student.id !== currentUserId && (
+                                            <>
+                                                {/* Promote to CR (if student) */}
+                                                {student.role === 'STUDENT' && (
                                                     <button
-                                                        onClick={() => setEditStudent(student)}
-                                                        className="py-2.5 rounded-xl font-bold text-sm bg-blue-50/50 text-blue-600 hover:bg-blue-500 hover:text-white transition-all duration-300 flex items-center justify-center gap-2"
+                                                        onClick={() => setPromoteConfirm({ id: student.id, name: student.name })}
+                                                        disabled={isLoadingAction}
+                                                        className="w-full py-2.5 rounded-xl font-bold text-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
                                                     >
-                                                        <Pencil className="w-3.5 h-3.5" /> Edit
+                                                        {isLoadingAction ? (
+                                                            <>Processing...</>
+                                                        ) : (
+                                                            <><UserPlus className="w-4 h-4" /> Promote to CR</>
+                                                        )}
                                                     </button>
+                                                )}
+
+                                                {/* Demote to Student (if CR but not Top CR) */}
+                                                {isStudentCR && !student.isTopCR && (
                                                     <button
-                                                        onClick={() => setDeleteConfirm(student.id)}
-                                                        className="py-2.5 rounded-xl font-bold text-sm bg-rose-50/50 text-rose-600 hover:bg-rose-500 hover:text-white transition-all duration-300 flex items-center justify-center gap-2"
+                                                        onClick={() => setDemoteConfirm({ id: student.id, name: student.name })}
+                                                        disabled={isLoadingAction}
+                                                        className="w-full py-2.5 rounded-xl font-bold text-sm bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
                                                     >
-                                                        <Trash2 className="w-3.5 h-3.5" /> Remove
+                                                        {isLoadingAction ? (
+                                                            <>Processing...</>
+                                                        ) : (
+                                                            <><UserMinus className="w-4 h-4" /> Demote to Student</>
+                                                        )}
                                                     </button>
-                                                </div>
-                                            )}
+                                                )}
+
+                                                {/* Top CR: Edit/Delete buttons for regular CRs and students (not Top CR) */}
+                                                {!student.isTopCR && (
+                                                    <div className="grid grid-cols-2 gap-2 mt-1">
+                                                        <button
+                                                            onClick={() => setEditStudent(student)}
+                                                            className="py-2.5 rounded-xl font-bold text-sm bg-blue-50/50 text-blue-600 hover:bg-blue-500 hover:text-white transition-all duration-300 flex items-center justify-center gap-2"
+                                                        >
+                                                            <Pencil className="w-3.5 h-3.5" /> Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setDeleteConfirm(student.id)}
+                                                            className="py-2.5 rounded-xl font-bold text-sm bg-rose-50/50 text-rose-600 hover:bg-rose-500 hover:text-white transition-all duration-300 flex items-center justify-center gap-2"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" /> Remove
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {/* Regular CR: Edit/Delete buttons ONLY for students */}
+                                        {isCR && !isTopCR && !isTeacher && student.id !== currentUserId && student.role === 'STUDENT' && (
+                                            <div className="grid grid-cols-2 gap-2 mt-1">
+                                                <button
+                                                    onClick={() => setEditStudent(student)}
+                                                    className="py-2.5 rounded-xl font-bold text-sm bg-blue-50/50 text-blue-600 hover:bg-blue-500 hover:text-white transition-all duration-300 flex items-center justify-center gap-2"
+                                                >
+                                                    <Pencil className="w-3.5 h-3.5" /> Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteConfirm(student.id)}
+                                                    className="py-2.5 rounded-xl font-bold text-sm bg-rose-50/50 text-rose-600 hover:bg-rose-500 hover:text-white transition-all duration-300 flex items-center justify-center gap-2"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" /> Remove
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -232,6 +366,100 @@ export function BatchGrid({ students, currentUserRole, currentUserId, currentUse
                                         className="py-3.5 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-200 transition-all hover:scale-[1.02]"
                                     >
                                         {isDeleting ? 'Removing...' : 'Yes, Remove'}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {/* Promote Confirmation Modal */}
+                {promoteConfirm && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setPromoteConfirm(null)}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-sm bg-white rounded-[2rem] p-8 shadow-2xl overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 p-8 opacity-10">
+                                <Crown className="w-40 h-40 text-indigo-500 -rotate-12" />
+                            </div>
+
+                            <div className="relative z-10">
+                                <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-6 text-indigo-500 shadow-inner">
+                                    <Crown className="w-8 h-8" />
+                                </div>
+
+                                <h3 className="text-2xl font-black text-slate-900 mb-2">Promote to CR?</h3>
+                                <p className="text-slate-500 font-medium mb-8 leading-relaxed">
+                                    Are you sure you want to promote <span className="text-indigo-600 font-bold">{promoteConfirm.name}</span> to Class Representative?
+                                </p>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button
+                                        onClick={() => setPromoteConfirm(null)}
+                                        className="py-3.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => handlePromoteToCR(promoteConfirm.id, promoteConfirm.name)}
+                                        className="py-3.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all hover:scale-[1.02]"
+                                    >
+                                        Yes, Promote
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {/* Demote Confirmation Modal */}
+                {demoteConfirm && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setDemoteConfirm(null)}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-sm bg-white rounded-[2rem] p-8 shadow-2xl overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 p-8 opacity-10">
+                                <UserMinus className="w-40 h-40 text-amber-500 -rotate-12" />
+                            </div>
+
+                            <div className="relative z-10">
+                                <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 text-amber-500 shadow-inner">
+                                    <UserMinus className="w-8 h-8" />
+                                </div>
+
+                                <h3 className="text-2xl font-black text-slate-900 mb-2">Demote to Student?</h3>
+                                <p className="text-slate-500 font-medium mb-8 leading-relaxed">
+                                    Are you sure you want to demote <span className="text-amber-600 font-bold">{demoteConfirm.name}</span> back to regular student role?
+                                </p>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button
+                                        onClick={() => setDemoteConfirm(null)}
+                                        className="py-3.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => handleDemoteToStudent(demoteConfirm.id, demoteConfirm.name)}
+                                        className="py-3.5 rounded-xl font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-200 transition-all hover:scale-[1.02]"
+                                    >
+                                        Yes, Demote
                                     </button>
                                 </div>
                             </div>

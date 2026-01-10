@@ -87,18 +87,20 @@ export function ProfileView({ profile, currentUser, cloudData, basePath, headerA
                         <div className="flex flex-wrap justify-center md:justify-start gap-2.5 mt-3">
                             {/* Role Badge - Show for all users */}
                             <Badge color={
-                                displayUser.role === 'SUPER_ADMIN' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                                    displayUser.role === 'DEPT_ADMIN' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                                        displayUser.role === 'TEACHER' ? 'bg-purple-50 text-purple-700 border-purple-100' :
-                                            displayUser.role === 'CR' ? 'bg-green-50 text-green-700 border-green-100' :
-                                                'bg-blue-50 text-blue-700 border-blue-100'
+                                profile.isTopCR && displayUser.role === 'CR' ? 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 border-amber-200' :
+                                    displayUser.role === 'SUPER_ADMIN' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                                        displayUser.role === 'DEPT_ADMIN' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                                            displayUser.role === 'TEACHER' ? 'bg-purple-50 text-purple-700 border-purple-100' :
+                                                displayUser.role === 'CR' ? 'bg-green-50 text-green-700 border-green-100' :
+                                                    'bg-blue-50 text-blue-700 border-blue-100'
                             }>
                                 <GraduationCap className="w-3 h-3 mr-1 inline" />
-                                {displayUser.role === 'SUPER_ADMIN' ? 'Super Admin' :
-                                    displayUser.role === 'DEPT_ADMIN' ? 'Department Admin' :
-                                        displayUser.role === 'TEACHER' ? 'Professor' :
-                                            displayUser.role === 'CR' ? 'Class Representative' :
-                                                'Student'}
+                                {profile.isTopCR && displayUser.role === 'CR' ? '👑 Top CR' :
+                                    displayUser.role === 'SUPER_ADMIN' ? 'Super Admin' :
+                                        displayUser.role === 'DEPT_ADMIN' ? 'Department Admin' :
+                                            displayUser.role === 'TEACHER' ? 'Professor' :
+                                                displayUser.role === 'CR' ? 'Class Representative' :
+                                                    'Student'}
                             </Badge>
 
                             {/* Show teacher designation for TEACHER role */}

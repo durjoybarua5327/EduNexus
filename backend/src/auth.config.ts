@@ -26,6 +26,10 @@ export const authConfig = {
                 session.user.id = token.sub;
                 // @ts-ignore // We will extend the type definition later
                 session.user.role = token.role;
+                // @ts-ignore
+                session.user.isTopCR = token.isTopCR;
+                // @ts-ignore
+                session.user.isTopDepartmentAdmin = token.isTopDepartmentAdmin;
             }
             return session;
         },
@@ -33,6 +37,10 @@ export const authConfig = {
             if (user) {
                 // @ts-ignore
                 token.role = user.role;
+                // @ts-ignore
+                token.isTopCR = user.isTopCR;
+                // @ts-ignore
+                token.isTopDepartmentAdmin = user.isTopDepartmentAdmin;
             }
             return token;
         }

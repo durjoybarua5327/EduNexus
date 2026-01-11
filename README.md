@@ -6,52 +6,40 @@ EduNexus is a comprehensive web-based platform designed to streamline department
 
 ### 👨‍🎓 Student & CR Panel
 
-<div align="center">
-  <img src="Demos/image1.png" alt="Student Panel - Dashboard" width="100%" style="margin: 5px;" />
-  <img src="Demos/image2.png" alt="Student Panel - Courses" width="100%" style="margin: 5px;" />
-  <img src="Demos/image3.png" alt="Student Panel - Resources" width="100%" style="margin: 5px;" />
-  <img src="Demos/image4.png" alt="Student Panel - Notices" width="100%" style="margin: 5px;" />
-  <img src="Demos/image5.png" alt="CR Panel - Class Management" width="100%" style="margin: 5px;" />
-  <img src="Demos/image6.png" alt="CR Panel - Post Notice" width="100%" style="margin: 5px;" />
-  <img src="Demos/image7.png" alt="CR Panel - Batch View" width="100%" style="margin: 5px;" />
-</div>
-<br/>
+![Student Panel - Dashboard](Demos/image1.png)
+![Student Panel - Courses](Demos/image2.png)
+![Student Panel - Resources](Demos/image3.png)
+![Student Panel - Notices](Demos/image4.png)
+![CR Panel - Class Management](Demos/image5.png)
+![CR Panel - Post Notice](Demos/image6.png)
+![CR Panel - Batch View](Demos/image7.png)
 
 ### 👨‍🏫 Faculty/Teacher Panel
 
-<div align="center">
-  <img src="Demos/image8.png" alt="Teacher Panel - Dashboard" width="100%" style="margin: 5px;" />
-  <img src="Demos/image9.png" alt="Teacher Panel - My Courses" width="100%" style="margin: 5px;" />
-  <img src="Demos/image10.png" alt="Teacher Panel - Course Materials" width="100%" style="margin: 5px;" />
-  <img src="Demos/image11.png" alt="Teacher Panel - Post Notice" width="100%" style="margin: 5px;" />
-  <img src="Demos/image12.png" alt="Teacher Panel - Class Notices" width="100%" style="margin: 5px;" />
-  <img src="Demos/image13.png" alt="Teacher Panel - File Management" width="100%" style="margin: 5px;" />
-  <img src="Demos/image14.png" alt="Teacher Panel - Course Details" width="100%" style="margin: 5px;" />
-</div>
-<br/>
+![Teacher Panel - Dashboard](Demos/image8.png)
+![Teacher Panel - My Courses](Demos/image9.png)
+![Teacher Panel - Course Materials](Demos/image10.png)
+![Teacher Panel - Post Notice](Demos/image11.png)
+![Teacher Panel - Class Notices](Demos/image12.png)
+![Teacher Panel - File Management](Demos/image13.png)
+![Teacher Panel - Course Details](Demos/image14.png)
 
 ### 🏛️ Department Admin Panel
 
-<div align="center">
-  <img src="Demos/image15.png" alt="Dept Admin - Overview" width="100%" style="margin: 5px;" />
-  <img src="Demos/image16.png" alt="Dept Admin - Batches" width="100%" style="margin: 5px;" />
-  <img src="Demos/image17.png" alt="Dept Admin - Faculty Management" width="100%" style="margin: 5px;" />
-  <img src="Demos/image18.png" alt="Dept Admin - Academics" width="100%" style="margin: 5px;" />
-  <img src="Demos/image19.png" alt="Dept Admin - Courses" width="100%" style="margin: 5px;" />
-  <img src="Demos/image20.png" alt="Dept Admin - Notices" width="100%" style="margin: 5px;" />
-  <img src="Demos/image21.png" alt="Dept Admin - History" width="100%" style="margin: 5px;" />
-</div>
-<br/>
+![Dept Admin - Overview](Demos/image15.png)
+![Dept Admin - Batches](Demos/image16.png)
+![Dept Admin - Faculty Management](Demos/image17.png)
+![Dept Admin - Academics](Demos/image18.png)
+![Dept Admin - Courses](Demos/image19.png)
+![Dept Admin - Notices](Demos/image20.png)
+![Dept Admin - History](Demos/image21.png)
 
 ### 👨‍💻 Super Admin Panel
 
-<div align="center">
-  <img src="Demos/image22.png" alt="Super Admin - Global Overview" width="100%" style="margin: 5px;" />
-  <img src="Demos/image23.png" alt="Super Admin - University Management" width="100%" style="margin: 5px;" />
-  <img src="Demos/image24.png" alt="Super Admin - Department Controls" width="100%" style="margin: 5px;" />
-  <img src="Demos/image25.png" alt="Super Admin - System Settings" width="100%" style="margin: 5px;" />
-</div>
-<br/>
+![Super Admin - Global Overview](Demos/image22.png)
+![Super Admin - University Management](Demos/image23.png)
+![Super Admin - Department Controls](Demos/image24.png)
+![Super Admin - System Settings](Demos/image25.png)
 
 ## ⚡ Prerequisites
 

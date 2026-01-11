@@ -56,7 +56,7 @@ export default function CourseNoticesPage(props: { params: Promise<{ courseId: s
     const handleEdit = (notice: any, e: React.MouseEvent) => {
         e.stopPropagation();
         // TODO: Implement edit modal
-        console.log("Edit notice", notice);
+
     };
 
     return (

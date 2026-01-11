@@ -38,6 +38,7 @@ export async function uploadFile(formData: FormData) {
     const folderId = formData.get('folderId') as string;
     const files = formData.getAll('file') as File[]; // Get all files
     const path = formData.get('path') as string;
+    const isPublic = formData.get('isPublic') === 'on';
 
     if (!files || files.length === 0) {
         return { error: "No files provided" };
@@ -76,7 +77,8 @@ export async function uploadFile(formData: FormData) {
                     folderId,
                     fileType: file.type,
                     size: file.size,
-                    url: url
+                    url: url,
+                    isPublic
                 })
             });
 

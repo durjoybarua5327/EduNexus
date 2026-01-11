@@ -80,7 +80,7 @@ export async function GET(req: Request) {
                 `, [userId]);
 
                 if (courses && courses.length > 0) {
-                    console.log(`Found ${courses.length} courses for teacher ${userId}:`, courses);
+
                     teacherCourses = courses.map(course => ({
                         id: course.id,
                         courseName: course.courseName,
@@ -92,7 +92,7 @@ export async function GET(req: Request) {
                         } : null
                     }));
                 } else {
-                    console.log(`No courses found for teacher ${userId}`);
+
                 }
             } catch (error) {
                 console.error("Error fetching teacher courses:", error);

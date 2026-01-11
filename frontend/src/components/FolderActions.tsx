@@ -121,18 +121,20 @@ export function FolderActions({ folder, onSuccess }: FolderActionsProps & { onSu
                             </button>
                         )}
 
-                        {/* Privacy - Always available */}
-                        <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleTogglePrivacy();
-                            }}
-                            className="w-full text-left px-4 py-3 text-sm flex items-center gap-3 text-slate-700 hover:bg-slate-50 transition-colors font-medium"
-                        >
-                            {folder.isPublic ? <Lock className="w-4 h-4 text-amber-500" /> : <Unlock className="w-4 h-4 text-emerald-500" />}
-                            Make {folder.isPublic ? "Private" : "Public"}
-                        </button>
+                        {/* Privacy - Hidden for system folders as they are always public or managed by system */}
+                        {!folder.isSystem && (
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleTogglePrivacy();
+                                }}
+                                className="w-full text-left px-4 py-3 text-sm flex items-center gap-3 text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                            >
+                                {folder.isPublic ? <Lock className="w-4 h-4 text-amber-500" /> : <Unlock className="w-4 h-4 text-emerald-500" />}
+                                Make {folder.isPublic ? "Private" : "Public"}
+                            </button>
+                        )}
 
                         {folder.isSystem === true && (
                             <div className="px-4 py-2 text-xs text-amber-600 italic text-center border-b border-slate-100 mb-1 bg-amber-50 font-medium">

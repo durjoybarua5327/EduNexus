@@ -49,7 +49,7 @@ export default function EditTeacherNoticeForm({ notice, onSuccess }: EditTeacher
                 isPinned,
             };
 
-            console.log("Updating notice:", requestBody);
+
 
             // Make the actual API call
             const response = await fetch(`/api/class-notice/${notice.id}`, {
@@ -66,7 +66,7 @@ export default function EditTeacherNoticeForm({ notice, onSuccess }: EditTeacher
                 throw new Error(result.error || 'Failed to update notice');
             }
 
-            console.log("Notice updated successfully:", result);
+
             setStatus('success');
 
             // Call onSuccess callback if provided
@@ -104,7 +104,7 @@ export default function EditTeacherNoticeForm({ notice, onSuccess }: EditTeacher
                 </div>
 
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Notice Details (Rich Text)</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Notice Details</label>
                     <div className="border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-violet-500 transition-all bg-white shadow-sm">
                         <div className="h-[50vh] overflow-y-auto custom-scrollbar relative">
                             <ReactQuill

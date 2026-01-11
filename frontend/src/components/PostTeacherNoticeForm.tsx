@@ -15,17 +15,24 @@ interface PostTeacherNoticeFormProps {
     onSuccess?: () => void;
 }
 
+/**
+ * PostTeacherNoticeForm: A specialized form for teachers to broadcast notices to specific courses/batches.
+ */
 export default function PostTeacherNoticeForm({ onSuccess }: PostTeacherNoticeFormProps = {}) {
+    // --- State Management ---
     const [courses, setCourses] = useState<any[]>([]);
     const [fetchingCourses, setFetchingCourses] = useState(true);
     const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
     const [description, setDescription] = useState("");
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [errorMessage, setErrorMessage] = useState("");
     const [uploadedFiles, setUploadedFiles] = useState<{ file?: File; name: string; isPrivate: boolean }[]>([]);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const modules = {
+    // ReactQuill configuration
+    const editorModules = {
         toolbar: [
             [{ 'header': [1, 2, false] }],
             ['bold', 'italic', 'underline', 'strike', 'blockquote'],
@@ -34,120 +41,110 @@ export default function PostTeacherNoticeForm({ onSuccess }: PostTeacherNoticeFo
         ],
     };
 
+    // --- Effects ---
     useEffect(() => {
-        const loadCourses = async () => {
+        const loadTeacherCourses = async () => {
             try {
                 const data = await fetchAPI('/teacher/courses');
                 if (Array.isArray(data)) {
                     setCourses(data);
                 }
-            } catch (e) {
-                console.error("Failed to load courses", e);
+            } catch (error) {
+                // The provided snippet contained server-side Zod error handling and NextResponse,
+                // which are not applicable in a client-side React component.
+                // Keeping the original client-side error handling for fetchAPI.
+                console.error("Failed to load teacher courses:", error);
             } finally {
                 setFetchingCourses(false);
             }
         };
-        loadCourses();
+        loadTeacherCourses();
     }, []);
 
-    const handleFileSelect = () => {
-        fileInputRef.current?.click();
-    };
+    // --- Event Handlers ---
+
+    const handleFileSelect = () => fileInputRef.current?.click();
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
+        if (e.target.files?.length) {
             const file = e.target.files[0];
             setUploadedFiles(prev => [...prev, { file, name: file.name, isPrivate: false }]);
         }
-        // Reset input so the same file can be selected again if needed
-        if (e.target) e.target.value = '';
+        if (e.target) e.target.value = ''; // Clear for re-selection
     };
 
     const toggleFilePrivacy = (index: number) => {
-        setUploadedFiles(prev => prev.map((f, i) => i === index ? { ...f, isPrivate: !f.isPrivate } : f));
+        setUploadedFiles(prev => prev.map((file, i) => i === index ? { ...file, isPrivate: !file.isPrivate } : file));
     };
 
     const removeFile = (index: number) => {
         setUploadedFiles(prev => prev.filter((_, i) => i !== index));
     };
 
-    const toggleCourse = (id: string) => {
+    const toggleCourseSelection = (courseId: string) => {
         setSelectedCourses(prev =>
-            prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+            prev.includes(courseId) ? prev.filter(id => id !== courseId) : [...prev, courseId]
         );
     };
 
-    const handleSelectAll = () => {
-        if (selectedCourses.length === courses.length) {
-            setSelectedCourses([]);
-        } else {
-            setSelectedCourses(courses.map(c => c.id));
-        }
+    const handleToggleAllCourses = () => {
+        setSelectedCourses(selectedCourses.length === courses.length ? [] : courses.map(c => c.id));
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const form = e.currentTarget; // Capture form reference immediately
+        const formElement = e.currentTarget;
+
         setLoading(true);
         setStatus('idle');
+        setErrorMessage("");
 
         try {
-            const formData = new FormData(form);
+            const formData = new FormData(formElement);
             const title = formData.get("title") as string;
             const priority = (formData.get("priority") as string) || "MEDIUM";
             const isPinned = formData.get("isPinned") === "on";
 
-            // Prepare the request body
-            const requestBody = {
+            const payload = {
                 title,
                 description,
                 priority,
                 isPinned,
                 targetCourses: selectedCourses,
-                // Note: File attachments will need separate handling via file upload API
-                // For now, we're just posting the notice without file attachments
             };
 
-            console.log("Submitting notice:", requestBody);
-
-            // Make the actual API call
             const response = await fetch('/api/class-notice', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
             });
 
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(result.error || 'Failed to publish notice');
+                const errorText = result.error || 'Failed to publish notice';
+                setErrorMessage(errorText);
+                throw new Error(errorText);
             }
 
-            console.log("Notice published successfully:", result);
             setStatus('success');
 
-            // Reset form
+            // Clean up form
             setDescription("");
             setUploadedFiles([]);
             setSelectedCourses([]);
-            form.reset(); // Use captured reference
+            formElement.reset();
 
-            // Call onSuccess callback if provided
             if (onSuccess) {
-                setTimeout(() => {
-                    onSuccess();
-                }, 1000); // Small delay to show success message
+                setTimeout(onSuccess, 1000);
             } else {
-                // Auto-hide success message after 5 seconds only if no callback
                 setTimeout(() => setStatus('idle'), 5000);
             }
 
-        } catch (error) {
-            console.error("Error publishing notice:", error);
+        } catch (error: any) {
+            console.error("Notice submission failed:", error);
             setStatus('error');
-            // Auto-hide error message after 5 seconds
+            if (!errorMessage) setErrorMessage(error.message || "An unexpected error occurred.");
             setTimeout(() => setStatus('idle'), 5000);
         } finally {
             setLoading(false);
@@ -156,7 +153,7 @@ export default function PostTeacherNoticeForm({ onSuccess }: PostTeacherNoticeFo
 
     return (
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column: Content */}
+            {/* Left Section: Notice Content */}
             <div className="lg:col-span-2 space-y-6">
                 <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1.5">Notice Title</label>
@@ -170,14 +167,14 @@ export default function PostTeacherNoticeForm({ onSuccess }: PostTeacherNoticeFo
                 </div>
 
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Notice Details (Rich Text)</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Notice Details</label>
                     <div className="border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-violet-500 transition-all bg-white shadow-sm">
                         <div className="h-[50vh] overflow-y-auto custom-scrollbar relative">
                             <ReactQuill
                                 theme="snow"
                                 value={description}
                                 onChange={setDescription}
-                                modules={modules}
+                                modules={editorModules}
                                 className="h-full flex flex-col [&_.ql-toolbar]:sticky [&_.ql-toolbar]:top-0 [&_.ql-toolbar]:z-20 [&_.ql-toolbar]:bg-gray-50 [&_.ql-toolbar]:border-b [&_.ql-toolbar]:border-gray-200 [&_.ql-container]:flex-1 [&_.ql-container]:overflow-y-auto [&_.ql-editor]:min-h-[200px]"
                             />
                         </div>
@@ -185,15 +182,16 @@ export default function PostTeacherNoticeForm({ onSuccess }: PostTeacherNoticeFo
                 </div>
             </div>
 
-            {/* Right Column: Settings & Files */}
+            {/* Right Section: Configuration & Targeting */}
             <div className="lg:col-span-1 space-y-6">
-                {/* Course Selector */}
+
+                {/* Targeting */}
                 <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
                     <div className="flex justify-between items-center mb-3">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Target Courses</label>
                         <button
                             type="button"
-                            onClick={handleSelectAll}
+                            onClick={handleToggleAllCourses}
                             className="text-xs font-bold text-indigo-600 hover:text-indigo-700"
                         >
                             {selectedCourses.length === courses.length ? "Deselect All" : "Select All"}
@@ -202,102 +200,103 @@ export default function PostTeacherNoticeForm({ onSuccess }: PostTeacherNoticeFo
 
                     {fetchingCourses ? (
                         <div className="text-sm text-slate-400 py-2">Loading courses...</div>
-                    ) : courses.length === 0 ? (
-                        <div className="text-sm text-amber-500 py-2">No courses assigned.</div>
                     ) : (
                         <div className="space-y-2 max-h-52 overflow-y-auto custom-scrollbar pr-1">
-                            {courses.map(course => (
-                                <label key={course.id} className={`
+                            {courses.length === 0 ? (
+                                <div className="text-sm text-amber-500 py-2 text-center border-2 border-dashed border-amber-100 rounded-xl">No courses assigned.</div>
+                            ) : (
+                                courses.map(course => (
+                                    <label key={course.id} className={`
                                         flex items-center gap-3 p-3 rounded-xl cursor-pointer border transition-all text-sm
                                         ${selectedCourses.includes(course.id)
-                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-200'
-                                        : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'}
+                                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-200'
+                                            : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'}
                                     `}>
-                                    <input
-                                        type="checkbox"
-                                        value={course.id}
-                                        checked={selectedCourses.includes(course.id)}
-                                        onChange={() => toggleCourse(course.id)}
-                                        className={`w-4 h-4 rounded focus:ring-offset-0 ${selectedCourses.includes(course.id) ? 'accent-white' : 'accent-indigo-600'}`}
-                                    />
-                                    <span className="truncate font-medium">{course.courseCode || course.name}</span>
-                                </label>
-                            ))}
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedCourses.includes(course.id)}
+                                            onChange={() => toggleCourseSelection(course.id)}
+                                            className="hidden"
+                                        />
+                                        <div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-colors ${selectedCourses.includes(course.id) ? 'bg-white border-white' : 'border-slate-300'}`}>
+                                            {selectedCourses.includes(course.id) && <div className="w-2.5 h-2.5 bg-indigo-600 rounded-sm" />}
+                                        </div>
+                                        <span className="truncate font-medium">{course.courseCode || course.name}</span>
+                                    </label>
+                                ))
+                            )}
                         </div>
                     )}
                     <div className="text-xs text-slate-400 mt-3 font-medium text-right">
-                        {selectedCourses.length} selected
+                        {selectedCourses.length} courses selected
                     </div>
                 </div>
 
-                {/* Configurations */}
+                {/* Settings */}
                 <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4">
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Settings</label>
+                    <div className="space-y-3">
+                        <label className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 cursor-pointer hover:border-indigo-200 transition-colors">
+                            <input type="checkbox" name="isPinned" className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500" />
+                            <span className="text-sm font-medium text-slate-700 flex-1">Pin to Top</span>
+                            <Pin className="w-4 h-4 text-slate-400" />
+                        </label>
 
-                    <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200">
-                        <input type="checkbox" name="isPinned" id="isPinned" className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500" />
-                        <label htmlFor="isPinned" className="text-sm font-medium text-slate-700 cursor-pointer flex-1">Pin to Top</label>
-                        <Pin className="w-4 h-4 text-slate-400" />
-                    </div>
-
-                    <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200">
-                        <label htmlFor="priority" className="text-sm font-medium text-slate-700 flex-1">Priority</label>
-                        <select name="priority" className="text-sm bg-transparent font-bold text-slate-600 outline-none cursor-pointer">
-                            <option value="LOW">Low</option>
-                            <option value="MEDIUM">Medium</option>
-                            <option value="HIGH">High</option>
-                        </select>
+                        <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200">
+                            <label className="text-sm font-medium text-slate-700 flex-1">Priority</label>
+                            <select name="priority" className="text-sm bg-transparent font-bold text-slate-600 outline-none cursor-pointer">
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="HIGH">High</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                {/* File Upload Section */}
+                {/* Attachments */}
                 <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4">
                     <div className="flex justify-between items-center">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Attachments</label>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                            className="hidden"
-                        />
+                        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
                         <button type="button" onClick={handleFileSelect} className="text-xs font-bold text-indigo-600 flex items-center gap-1 hover:underline">
                             <UploadCloud className="w-3 h-3" /> Add File
                         </button>
                     </div>
 
                     <div className="space-y-3">
-                        {uploadedFiles.map((file, index) => (
-                            <div key={index} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm group">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2 overflow-hidden">
-                                        {file.isPrivate ? <FolderLock className="w-4 h-4 text-rose-500 shrink-0" /> : <FolderOpen className="w-4 h-4 text-emerald-500 shrink-0" />}
-                                        <span className="text-sm font-medium text-slate-700 truncate">{file.name}</span>
-                                    </div>
-                                    <button type="button" onClick={() => removeFile(index)} className="text-slate-400 hover:text-rose-500 p-1">
-                                        <XCircle className="w-4 h-4" />
-                                    </button>
-                                </div>
-                                <div className="flex items-center justify-between text-xs bg-slate-50 p-1.5 rounded-lg">
-                                    <span className="text-slate-500 font-medium">Access Level:</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleFilePrivacy(index)}
-                                        className={`px-2 py-0.5 rounded-md font-bold transition-colors ${file.isPrivate ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}
-                                    >
-                                        {file.isPrivate ? "Private" : "Public"}
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                        {uploadedFiles.length === 0 && (
+                        {uploadedFiles.length === 0 ? (
                             <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl">
                                 <span className="text-xs text-slate-400">No files attached</span>
                             </div>
+                        ) : (
+                            uploadedFiles.map((file, index) => (
+                                <div key={index} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2 overflow-hidden">
+                                            {file.isPrivate ? <FolderLock className="w-4 h-4 text-rose-500 shrink-0" /> : <FolderOpen className="w-4 h-4 text-emerald-500 shrink-0" />}
+                                            <span className="text-sm font-medium text-slate-700 truncate">{file.name}</span>
+                                        </div>
+                                        <button type="button" onClick={() => removeFile(index)} className="text-slate-400 hover:text-rose-500 p-1">
+                                            <XCircle className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs bg-slate-50 p-1.5 rounded-lg">
+                                        <span className="text-slate-500 font-medium">Access Level:</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleFilePrivacy(index)}
+                                            className={`px-2 py-0.5 rounded-md font-bold transition-colors ${file.isPrivate ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}
+                                        >
+                                            {file.isPrivate ? "Private" : "Public"}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
                         )}
                     </div>
                 </div>
 
-                {/* Actions */}
+                {/* Submission */}
                 <div className="pt-4">
                     <button
                         type="submit"
@@ -312,7 +311,7 @@ export default function PostTeacherNoticeForm({ onSuccess }: PostTeacherNoticeFo
                         <div className={`mt-4 p-3 rounded-xl flex items-center gap-2 text-sm font-medium animate-in fade-in slide-in-from-top-2
                                  ${status === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                             {status === 'success' ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                            {status === 'success' ? `Published to ${selectedCourses.length} courses!` : "Failed to publish."}
+                            {status === 'success' ? `Successfully published to ${selectedCourses.length} courses!` : errorMessage || "Failed to publish notice."}
                         </div>
                     )}
                 </div>

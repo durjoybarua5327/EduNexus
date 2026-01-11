@@ -227,7 +227,7 @@ export default function NoticesPage() {
                                     value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1.5">Description (Rich Text)</label>
+                                <label className="block text-sm font-bold text-gray-700 mb-1.5">Description</label>
                                 <div className="border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-orange-500 transition-all bg-white">
                                     <div className="h-[60vh] overflow-y-auto custom-scrollbar relative">
                                         <ReactQuill

@@ -69,7 +69,7 @@ export function FolderBrowser({ folders, files, breadcrumbs, currentFolderId, ba
                     {allowUploads && (
                         <>
                             <CreateFolderModal parentId={currentFolderId} showPrivacy={showPrivacy} onSuccess={onRefresh} />
-                            <UploadFileModal folderId={currentFolderId} onSuccess={onRefresh} />
+                            <UploadFileModal folderId={currentFolderId} showPrivacy={showPrivacy} onSuccess={onRefresh} />
                         </>
                     )}
                 </div>

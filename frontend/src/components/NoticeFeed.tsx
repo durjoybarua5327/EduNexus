@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Calendar, Megaphone, Pin, Tag, X, Clock, ArrowRight, Sparkles, Search, Filter, Trash2, Pencil } from "lucide-react";
+import { Bell, Calendar, Megaphone, Pin, Tag, X, Clock, ArrowRight, Sparkles, Search, Filter, Trash2, Pencil, BookOpen } from "lucide-react";
 import parse from 'html-react-parser';
 
 export function NoticeFeed({ notices, onDelete, onEdit, currentUserId }: {
@@ -153,6 +153,15 @@ export function NoticeFeed({ notices, onDelete, onEdit, currentUserId }: {
                                     </span>
                                 )}
 
+                                {notice.courseName && (
+                                    <div className="flex items-center gap-1.5 mb-3 px-2 py-1 bg-violet-50 text-violet-700 rounded-lg w-fit border border-violet-100">
+                                        <BookOpen className="w-3 h-3" />
+                                        <span className="text-[10px] font-black uppercase tracking-tight">
+                                            {notice.courseCode || 'SUBJECT'}: {notice.courseName}
+                                        </span>
+                                    </div>
+                                )}
+
                                 <h3 className="text-xl font-bold text-slate-800 mb-3 leading-tight group-hover:text-violet-700 transition-colors">
                                     {notice.title}
                                 </h3>
@@ -254,7 +263,7 @@ export function NoticeFeed({ notices, onDelete, onEdit, currentUserId }: {
                                         {selectedNotice.title}
                                     </h2>
 
-                                    <div className="flex items-center gap-4 text-sm font-medium text-white/80 mt-4">
+                                    <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-white/80 mt-4">
                                         <span className="flex items-center gap-2">
                                             <Calendar className="w-4 h-4 text-white/60" />
                                             {new Date(selectedNotice.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
@@ -263,6 +272,12 @@ export function NoticeFeed({ notices, onDelete, onEdit, currentUserId }: {
                                             <span className="flex items-center gap-2 text-orange-200">
                                                 <Clock className="w-4 h-4" />
                                                 Expires {new Date(selectedNotice.expiryDate).toLocaleDateString()}
+                                            </span>
+                                        )}
+                                        {selectedNotice.courseName && (
+                                            <span className="flex items-center gap-2 px-3 py-1 bg-white/20 text-white rounded-lg text-xs font-black ring-1 ring-white/30 backdrop-blur-sm">
+                                                <BookOpen className="w-3.5 h-3.5" />
+                                                {selectedNotice.courseCode ? `${selectedNotice.courseCode}: ` : ''}{selectedNotice.courseName}
                                             </span>
                                         )}
                                     </div>

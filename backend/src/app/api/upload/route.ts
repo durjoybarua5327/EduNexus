@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
         ];
         if (!allowedTypes.includes(file.type)) {
             // Log the rejected type to help debugging
-            console.log(`Rejected file type: ${file.type}`);
+
             return NextResponse.json({ error: `Invalid file type: ${file.type}. Allowed: Images, PDF, Docs, Slides, Sheets, Zip.` }, { status: 400 });
         }
 

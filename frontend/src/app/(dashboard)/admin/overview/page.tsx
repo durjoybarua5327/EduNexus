@@ -15,27 +15,15 @@ export default function DepartmentAdminDashboard() {
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
-    // Force refetch on mount to handle hydration mismatches
     useEffect(() => {
-        // Try to get deptId from multiple sources
         const contextDeptId = user?.departmentId;
         const sessionDeptId = (session?.user as any)?.departmentId;
-
-        // Debug logging
-        console.log("DeptAdminDashboard Check:", {
-            status,
-            contextDeptId,
-            sessionDeptId,
-            loading
-        });
 
         const effectiveDeptId = contextDeptId || sessionDeptId;
 
         if (effectiveDeptId) {
             fetchStats(effectiveDeptId);
         } else if (status === "authenticated") {
-            // Only stop loading if we are sure we are authenticated but have no deptId
-            // Give it a slight delay to allow context to propagate if needed
             const timer = setTimeout(() => {
                 if (!user?.departmentId && !(session?.user as any)?.departmentId) {
                     setLoading(false);
@@ -49,16 +37,11 @@ export default function DepartmentAdminDashboard() {
 
     async function fetchStats(deptId: string) {
         try {
-            console.log("DeptAdminDashboard: Fetching stats for deptId:", deptId);
             const res = await fetch(`/api/dept/stats?departmentId=${deptId}`);
-            console.log("DeptAdminDashboard: API Response Status:", res.status);
 
             if (res.ok) {
                 const data = await res.json();
-                console.log("DeptAdminDashboard: Stats Data:", data);
                 setStats(data);
-            } else {
-                console.error("DeptAdminDashboard: API Error:", await res.text());
             }
         } catch (error) {
             console.error("Failed to fetch stats", error);

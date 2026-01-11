@@ -78,6 +78,7 @@ export default function TeacherUploadsPage() {
                         currentFolderId={folderId}
                         basePath={`/teacher/uploads`}
                         allowUploads={true} // Enabled so they can upload inside folders
+                        showPrivacy={true}
                         onRefresh={fetchFolders}
                     // Note: Permissions to delete system folders are handled by backend & UI checks
                     />

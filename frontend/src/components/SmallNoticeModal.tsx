@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, Clock, Tag, Pin, User, AlertCircle } from "lucide-react";
+import { X, Calendar, Clock, Tag, Pin, User, AlertCircle, BookOpen } from "lucide-react";
 import parse from 'html-react-parser';
 
 interface SmallNoticeModalProps {
@@ -111,6 +111,12 @@ export function SmallNoticeModal({ isOpen, onClose, notice }: SmallNoticeModalPr
                                             <span className="flex items-center gap-2 text-slate-500">
                                                 <Clock className="w-4 h-4 text-orange-500" />
                                                 Expires: <span className="text-orange-600 font-bold">{new Date(notice.expiryDate).toLocaleDateString()}</span>
+                                            </span>
+                                        )}
+                                        {notice.courseName && (
+                                            <span className="flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-black ring-1 ring-indigo-100">
+                                                <BookOpen className="w-3.5 h-3.5" />
+                                                {notice.courseCode ? `${notice.courseCode}: ` : ''}{notice.courseName}
                                             </span>
                                         )}
                                     </div>

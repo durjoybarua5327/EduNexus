@@ -33,11 +33,7 @@ export function AddStudentModal({ isOpen, onClose, batchId, departmentId, onSucc
                 throw new Error("Batch ID or Department ID is missing. Please refresh the page.");
             }
 
-            console.log('Creating student with:', {
-                ...formData,
-                batchId,
-                departmentId
-            });
+
 
             const response = await fetch('/api/dept/students', {
                 method: 'POST',
@@ -50,7 +46,7 @@ export function AddStudentModal({ isOpen, onClose, batchId, departmentId, onSucc
             });
 
             const responseData = await response.json();
-            console.log('Response:', responseData);
+
 
             if (!response.ok) {
                 throw new Error(responseData.error || "Failed to create account");

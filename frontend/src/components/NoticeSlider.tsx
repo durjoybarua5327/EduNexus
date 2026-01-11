@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Megaphone, Bell, Pin, Calendar, ArrowRight, User, Trash2, Pencil } from "lucide-react";
+import { Megaphone, Bell, Pin, Calendar, ArrowRight, User, Trash2, Pencil, BookOpen } from "lucide-react";
 import parse from 'html-react-parser';
 
 interface NoticeGridProps {
@@ -83,6 +83,15 @@ export function NoticeGrid({ title, notices, onSelect, onDelete, onEdit, icon, c
                                 <h3 className="font-bold text-slate-800 leading-snug mb-2 line-clamp-2 min-h-[1.5rem] group-hover:text-indigo-600 transition-colors">
                                     {notice.title}
                                 </h3>
+
+                                {notice.courseName && (
+                                    <div className="flex items-center gap-1.5 mb-3 px-2 py-1 bg-indigo-50/50 text-indigo-700 rounded-lg w-fit border border-indigo-100/50">
+                                        <BookOpen className="w-3 h-3" />
+                                        <span className="text-[10px] font-black uppercase tracking-tight">
+                                            {notice.courseCode || 'SUBJECT'}: {notice.courseName}
+                                        </span>
+                                    </div>
+                                )}
 
                                 <div className="text-xs text-slate-500 line-clamp-3 mb-4 leading-relaxed break-words">
                                     {parse(typeof notice.description === 'string' ? notice.description : '')}

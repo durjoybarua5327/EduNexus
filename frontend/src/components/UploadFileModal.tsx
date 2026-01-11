@@ -6,7 +6,7 @@ import { UploadCloud, X } from "lucide-react";
 import { uploadFile } from "@/lib/actions/files";
 import { useRouter } from "next/navigation";
 
-export function UploadFileModal({ folderId, onSuccess }: { folderId: string | null, onSuccess?: () => void }) {
+export function UploadFileModal({ folderId, showPrivacy = false, onSuccess }: { folderId: string | null, showPrivacy?: boolean, onSuccess?: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -93,8 +93,15 @@ export function UploadFileModal({ folderId, onSuccess }: { folderId: string | nu
                                 {selectedFiles.length > 0 && <p className="text-xs text-indigo-600 mt-2 font-medium">Click to select different files</p>}
                             </div>
 
+                            {showPrivacy && (
+                                <div className="flex items-center gap-2 p-1">
+                                    <input type="checkbox" name="isPublic" id="isPublicFile" className="rounded text-indigo-600 focus:ring-indigo-500" />
+                                    <label htmlFor="isPublicFile" className="text-sm text-gray-700 font-medium">Make Public (Visible to Students)</label>
+                                </div>
+                            )}
+
                             <div className="pt-2">
-                                <button disabled={loading} type="submit" className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                                <button disabled={loading} type="submit" className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-bold">
                                     {loading ? 'Uploading...' : 'Upload'}
                                 </button>
                             </div>

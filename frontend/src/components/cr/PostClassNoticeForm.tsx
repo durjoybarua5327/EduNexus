@@ -83,7 +83,7 @@ export function PostClassNoticeForm({ onSuccess, onCancel, initialData }: PostCl
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1.5">Details (Rich Text)</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-1.5">Details</label>
                         <div className="border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-violet-500 transition-all bg-white">
                             <div className="h-[40vh] overflow-y-auto custom-scrollbar relative">
                                 <ReactQuill

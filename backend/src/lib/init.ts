@@ -1,13 +1,10 @@
-import mysql from 'mysql2/promise';
+import mysql, { PoolConnection } from 'mysql2/promise';
 import pool from './db';
 import bcrypt from 'bcryptjs';
 
 export async function initDatabase() {
   try {
-    console.log('INIT: Starting database initialization...');
-
     const dbUrl = process.env.DATABASE_URL;
-    console.log('INIT: DB URL found:', !!dbUrl);
 
     if (!dbUrl) throw new Error("DATABASE_URL not found");
 
@@ -41,14 +38,15 @@ export async function initDatabase() {
     };
     const connection = await mysql.createConnection(connectionConfig);
     await connection.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
-    console.log(`✅ Database '${database}' ready.`);
     await connection.end();
 
     // 2. Use the pool to create tables
-    const db = await pool.getConnection();
+    let db: PoolConnection | undefined;
+    try {
+      db = await pool.getConnection();
 
-    // --- Global Hierarchy ---
-    await db.query(`
+      // --- Global Hierarchy ---
+      await db.query(`
       CREATE TABLE IF NOT EXISTS University (
         id VARCHAR(191) PRIMARY KEY,
         name VARCHAR(191) NOT NULL,
@@ -58,11 +56,11 @@ export async function initDatabase() {
       )
     `);
 
-    // Ensure column exists
-    try { await db.query("ALTER TABLE University ADD COLUMN isBanned BOOLEAN DEFAULT FALSE"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
-    try { await db.query("ALTER TABLE University ADD COLUMN location VARCHAR(191)"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+      // Ensure column exists
+      try { await db.query("ALTER TABLE University ADD COLUMN isBanned BOOLEAN DEFAULT FALSE"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+      try { await db.query("ALTER TABLE University ADD COLUMN location VARCHAR(191)"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
 
-    await db.query(`
+      await db.query(`
       CREATE TABLE IF NOT EXISTS Department (
         id VARCHAR(191) PRIMARY KEY,
         name VARCHAR(191) NOT NULL,
@@ -73,13 +71,13 @@ export async function initDatabase() {
       )
     `);
 
-    // Ensure column exists
-    try { await db.query("ALTER TABLE Department ADD COLUMN isBanned BOOLEAN DEFAULT FALSE"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+      // Ensure column exists
+      try { await db.query("ALTER TABLE Department ADD COLUMN isBanned BOOLEAN DEFAULT FALSE"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
 
 
 
 
-    await db.query(`
+      await db.query(`
       CREATE TABLE IF NOT EXISTS Batch (
         id VARCHAR(191) PRIMARY KEY,
         name VARCHAR(191) NOT NULL,
@@ -95,14 +93,14 @@ export async function initDatabase() {
       )
     `);
 
-    // Ensure columns exist (Migration)
-    try { await db.query("ALTER TABLE Batch ADD COLUMN startMonth VARCHAR(50)"); console.log("✅ Added startMonth to Batch"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding startMonth:", e); }
-    try { await db.query("ALTER TABLE Batch ADD COLUMN currentSemester VARCHAR(50)"); console.log("✅ Added currentSemester to Batch"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding currentSemester:", e); }
-    try { await db.query("ALTER TABLE Batch ADD COLUMN semesterDuration VARCHAR(50)"); console.log("✅ Added semesterDuration to Batch"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding semesterDuration:", e); }
-    try { await db.query("ALTER TABLE Batch ADD COLUMN lastPromotionDate DATETIME"); console.log("✅ Added lastPromotionDate to Batch"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding lastPromotionDate:", e); }
+      // Ensure columns exist (Migration)
+      try { await db.query("ALTER TABLE Batch ADD COLUMN startMonth VARCHAR(50)"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+      try { await db.query("ALTER TABLE Batch ADD COLUMN currentSemester VARCHAR(50)"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+      try { await db.query("ALTER TABLE Batch ADD COLUMN semesterDuration VARCHAR(50)"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+      try { await db.query("ALTER TABLE Batch ADD COLUMN lastPromotionDate DATETIME"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
 
-    // --- Users & Roles ---
-    await db.query(`
+      // --- Users & Roles ---
+      await db.query(`
       CREATE TABLE IF NOT EXISTS User (
         id VARCHAR(191) PRIMARY KEY,
         name VARCHAR(191) NOT NULL,
@@ -120,27 +118,26 @@ export async function initDatabase() {
       )
     `);
 
-    // Ensure columns exist for existing databases
-    try {
-      await db.query("ALTER TABLE User ADD COLUMN isBanned BOOLEAN DEFAULT FALSE");
-    } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+      // Ensure columns exist for existing databases
+      try {
+        await db.query("ALTER TABLE User ADD COLUMN isBanned BOOLEAN DEFAULT FALSE");
+      } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
 
-    try {
-      await db.query("ALTER TABLE User ADD COLUMN banExpiresAt DATETIME");
-    } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+      try {
+        await db.query("ALTER TABLE User ADD COLUMN banExpiresAt DATETIME");
+      } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
 
-    try {
-      await db.query("ALTER TABLE User ADD COLUMN isTopDepartmentAdmin BOOLEAN DEFAULT FALSE");
-    } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+      try {
+        await db.query("ALTER TABLE User ADD COLUMN isTopDepartmentAdmin BOOLEAN DEFAULT FALSE");
+      } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
 
-    try {
-      await db.query("ALTER TABLE User ADD COLUMN isTopCR BOOLEAN DEFAULT FALSE");
-      console.log("✅ Added isTopCR to User");
-    } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') console.log("ℹ️  isTopCR column already exists"); }
+      try {
+        await db.query("ALTER TABLE User ADD COLUMN isTopCR BOOLEAN DEFAULT FALSE");
+      } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
 
 
-    // --- Audit Logs (Placed after User for FK) ---
-    await db.query(`
+      // --- Audit Logs (Placed after User for FK) ---
+      await db.query(`
       CREATE TABLE IF NOT EXISTS AuditLog (
         id VARCHAR(191) PRIMARY KEY,
         action VARCHAR(191) NOT NULL,
@@ -152,7 +149,7 @@ export async function initDatabase() {
       )
     `);
 
-    await db.query(`
+      await db.query(`
       CREATE TABLE IF NOT EXISTS StudentProfile (
         id VARCHAR(191) PRIMARY KEY,
         userId VARCHAR(191) UNIQUE NOT NULL,
@@ -164,7 +161,7 @@ export async function initDatabase() {
       )
     `);
 
-    await db.query(`
+      await db.query(`
       CREATE TABLE IF NOT EXISTS TeacherProfile (
         id VARCHAR(191) PRIMARY KEY,
         userId VARCHAR(191) UNIQUE NOT NULL,
@@ -175,8 +172,8 @@ export async function initDatabase() {
       )
     `);
 
-    // --- Academics ---
-    await db.query(`
+      // --- Academics ---
+      await db.query(`
       CREATE TABLE IF NOT EXISTS Semester (
         id VARCHAR(191) PRIMARY KEY,
         name VARCHAR(50) NOT NULL,
@@ -186,7 +183,7 @@ export async function initDatabase() {
       )
     `);
 
-    await db.query(`
+      await db.query(`
       CREATE TABLE IF NOT EXISTS Course (
         id VARCHAR(191) PRIMARY KEY,
         name VARCHAR(191) NOT NULL,
@@ -201,52 +198,37 @@ export async function initDatabase() {
       )
     `);
 
-    // Ensure credits column exists (for existing databases)
-    try {
-      await db.query("ALTER TABLE Course ADD COLUMN credits INT DEFAULT 3");
-      console.log("✅ Added credits to Course");
-    } catch (e: any) {
-      if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding credits:", e);
-    }
+      // Ensure credits column exists (for existing databases)
+      try {
+        await db.query("ALTER TABLE Course ADD COLUMN credits INT DEFAULT 3");
+      } catch (e: any) {
+        if (e.code !== 'ER_DUP_FIELDNAME') throw e;
+      }
 
-    // Migration: Add semesterId column if it doesn't exist
-    try {
-      await db.query("ALTER TABLE Course ADD COLUMN semesterId VARCHAR(191)");
-      console.log("✅ Added semesterId to Course");
-    } catch (e: any) {
-      if (e.code !== 'ER_DUP_FIELDNAME') console.error("Error adding semesterId:", e);
-    }
+      // Migration: Add semesterId column if it doesn't exist
+      try {
+        await db.query("ALTER TABLE Course ADD COLUMN semesterId VARCHAR(191)");
+      } catch (e: any) {
+        if (e.code !== 'ER_DUP_FIELDNAME') throw e;
+      }
 
-    // Migration: Add FK constraint if not exists
-    try {
-      await db.query(`
+      // Migration: Add FK constraint if not exists
+      try {
+        await db.query(`
         ALTER TABLE Course 
         ADD CONSTRAINT fk_course_semester 
         FOREIGN KEY (semesterId) REFERENCES Semester(id) ON DELETE CASCADE
       `);
-      console.log("✅ Added FK constraint for semesterId");
-    } catch (e: any) {
-      if (e.code !== 'ER_DUP_KEYNAME') console.error("Error adding FK:", e);
-    }
-
-    // Seed default semesters for existing departments (REMOVED: User requested no dummy data)
-    /*
-    const [departments] = await db.query<any[]>('SELECT id FROM Department');
-    for (const dept of departments) {
-      const semesters = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
-      for (const sem of semesters) {
-        const semId = `sem-${dept.id}-${sem}`;
-        await db.query(
-          'INSERT IGNORE INTO Semester (id, name, departmentId) VALUES (?, ?, ?)',
-          [semId, sem, dept.id]
-        );
+      } catch (e: any) {
+        if (e.code !== 'ER_DUP_KEYNAME' && e.errno !== 1061 && e.errno !== 121 && e.errno !== 1005) {
+          throw e;
+        }
       }
-    }
-    console.log("✅ Default semesters seeded");
-    */
 
 
-    await db.query(`
+
+
+      await db.query(`
       CREATE TABLE IF NOT EXISTS Routine (
         id VARCHAR(191) PRIMARY KEY,
         batchId VARCHAR(191) NOT NULL,
@@ -258,7 +240,7 @@ export async function initDatabase() {
       )
     `);
 
-    await db.query(`
+      await db.query(`
       CREATE TABLE IF NOT EXISTS Notice (
         id VARCHAR(191) PRIMARY KEY,
         title VARCHAR(191) NOT NULL,
@@ -272,17 +254,16 @@ export async function initDatabase() {
       )
     `);
 
-    // Ensure description is LONGTEXT to hold rich text
-    try { await db.query("ALTER TABLE Notice MODIFY description LONGTEXT"); } catch (e: any) { }
+      try { await db.query("ALTER TABLE Notice MODIFY description LONGTEXT"); } catch (e: any) { }
 
-    await db.query(`
+      await db.query(`
       CREATE TABLE IF NOT EXISTS Tag (
         id VARCHAR(191) PRIMARY KEY,
         name VARCHAR(191) UNIQUE NOT NULL
       )
     `);
 
-    await db.query(`
+      await db.query(`
       CREATE TABLE IF NOT EXISTS NoticeTag (
         noticeId VARCHAR(191),
         tagId VARCHAR(191),
@@ -292,7 +273,7 @@ export async function initDatabase() {
       )
     `);
 
-    await db.query(`
+      await db.query(`
       CREATE TABLE IF NOT EXISTS ClassNotice (
         id VARCHAR(191) PRIMARY KEY,
         title VARCHAR(191) NOT NULL,
@@ -300,18 +281,30 @@ export async function initDatabase() {
         priority ENUM('LOW', 'MEDIUM', 'HIGH') DEFAULT 'MEDIUM',
         batchId VARCHAR(191) NOT NULL,
         authorId VARCHAR(191) NOT NULL,
+        courseId VARCHAR(191),
         isPinned BOOLEAN DEFAULT FALSE,
         expiryDate DATETIME,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (batchId) REFERENCES Batch(id) ON DELETE CASCADE,
-        FOREIGN KEY (authorId) REFERENCES User(id) ON DELETE CASCADE
+        FOREIGN KEY (authorId) REFERENCES User(id) ON DELETE CASCADE,
+        FOREIGN KEY (courseId) REFERENCES Course(id) ON DELETE SET NULL
       )
     `);
 
-    // Ensure expiryDate exists
-    try { await db.query("ALTER TABLE ClassNotice ADD COLUMN expiryDate DATETIME"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+      // Ensure courseId column exists
+      try { await db.query("ALTER TABLE ClassNotice ADD COLUMN courseId VARCHAR(191)"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME' && e.errno !== 1060) throw e; }
+      try {
+        await db.query("ALTER TABLE ClassNotice ADD CONSTRAINT fk_classnotice_course FOREIGN KEY (courseId) REFERENCES Course(id) ON DELETE SET NULL");
+      } catch (e: any) {
+        // Catch duplicate key name, internal errno 121, or global errno 1005 (Can't create table due to 121)
+        const isDuplicateFK = e.code === 'ER_DUP_KEYNAME' || e.errno === 1061 || e.errno === 121 || (e.errno === 1005 && e.message?.includes('121'));
+        if (!isDuplicateFK) throw e;
+      }
 
-    await db.query(`
+      // Ensure expiryDate exists
+      try { await db.query("ALTER TABLE ClassNotice ADD COLUMN expiryDate DATETIME"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+
+      await db.query(`
       CREATE TABLE IF NOT EXISTS ClassNoticeTag (
         noticeId VARCHAR(191),
         tagId VARCHAR(191),
@@ -321,8 +314,8 @@ export async function initDatabase() {
       )
     `);
 
-    // --- Content ---
-    await db.query(`
+      // --- Content ---
+      await db.query(`
       CREATE TABLE IF NOT EXISTS Folder (
         id VARCHAR(191) PRIMARY KEY,
         name VARCHAR(191) NOT NULL,
@@ -339,10 +332,9 @@ export async function initDatabase() {
       )
     `);
 
-    // Ensure isSystem column exists
-    try { await db.query("ALTER TABLE Folder ADD COLUMN isSystem BOOLEAN DEFAULT FALSE"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+      try { await db.query("ALTER TABLE Folder ADD COLUMN isSystem BOOLEAN DEFAULT FALSE"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
 
-    await db.query(`
+      await db.query(`
       CREATE TABLE IF NOT EXISTS File (
         id VARCHAR(191) PRIMARY KEY,
         name VARCHAR(191) NOT NULL,
@@ -358,53 +350,44 @@ export async function initDatabase() {
       )
     `);
 
-    // Ensure isPublic column exists directly in File
-    try { await db.query("ALTER TABLE File ADD COLUMN isPublic BOOLEAN DEFAULT FALSE"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
+      // Ensure isPublic column exists directly in File
+      try { await db.query("ALTER TABLE File ADD COLUMN isPublic BOOLEAN DEFAULT FALSE"); } catch (e: any) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
 
-    console.log('✅ Tables initialized successfully.');
+      // Seed Super Admin if not exists
+      // Seed Super Admin if not exists
+      const targetEmail = 'durjoybarua8115@gmail.com';
+      const systemId = 'system';
 
-    // Seed Super Admin if not exists
-    // Seed Super Admin if not exists
-    const targetEmail = 'durjoybarua8115@gmail.com';
-    const systemId = 'system';
+      // Seed System User
+      const [existingSystem] = await db.query<any[]>('SELECT * FROM User WHERE id = ?', [systemId]);
+      if (existingSystem.length === 0) {
+        const hashedPassword = await bcrypt.hash('system-password-should-be-long', 10);
+        await db.query(
+          'INSERT INTO User (id, name, email, password, role, isBanned) VALUES (?, ?, ?, ?, ?, ?)',
+          [systemId, 'System', 'system@edunexus.local', hashedPassword, 'SUPER_ADMIN', false]
+        );
+      }
 
-    // Seed System User
-    const [existingSystem] = await db.query<any[]>('SELECT * FROM User WHERE id = ?', [systemId]);
-    if (existingSystem.length === 0) {
-      console.log('Seeding System User...');
-      const hashedPassword = await bcrypt.hash('system-password-should-be-long', 10);
-      await db.query(
-        'INSERT INTO User (id, name, email, password, role, isBanned) VALUES (?, ?, ?, ?, ?, ?)',
-        [systemId, 'System', 'system@edunexus.local', hashedPassword, 'SUPER_ADMIN', false]
-      );
-      console.log('✅ System User created');
+      const [existingAdmin] = await db.query<any[]>('SELECT * FROM User WHERE email = ?', [targetEmail]);
+
+      if (existingAdmin.length === 0) {
+        const hashedPassword = await bcrypt.hash('53278753905678', 10);
+        const adminId = 'super-admin-' + Date.now();
+
+        const uniId = 'uni-001';
+        await db.query('INSERT IGNORE INTO University (id, name, location) VALUES (?, ?, ?)', [uniId, 'EduNexus University', 'Global']);
+        const deptId = 'dept-001';
+        await db.query('INSERT IGNORE INTO Department (id, name, universityId) VALUES (?, ?, ?)', [deptId, 'Computer Science', uniId]);
+
+        await db.query(
+          'INSERT INTO User (id, name, email, password, role, departmentId) VALUES (?, ?, ?, ?, ?, ?)',
+          [adminId, 'Super Admin', targetEmail, hashedPassword, 'SUPER_ADMIN', deptId]
+        );
+      }
+
+    } finally {
+      if (db) db.release();
     }
-
-    const [existingAdmin] = await db.query<any[]>('SELECT * FROM User WHERE email = ?', [targetEmail]);
-
-    if (existingAdmin.length === 0) {
-      console.log('Seeding Super Admin...');
-      // Password provided: 53278753905678
-      const hashedPassword = await bcrypt.hash('53278753905678', 10);
-      const adminId = 'super-admin-' + Date.now();
-
-      // Ensure dummy university exists for seed
-      const uniId = 'uni-001';
-      await db.query('INSERT IGNORE INTO University (id, name, location) VALUES (?, ?, ?)', [uniId, 'EduNexus University', 'Global']);
-      const deptId = 'dept-001';
-      await db.query('INSERT IGNORE INTO Department (id, name, universityId) VALUES (?, ?, ?)', [deptId, 'Computer Science', uniId]);
-
-      await db.query(
-        'INSERT INTO User (id, name, email, password, role, departmentId) VALUES (?, ?, ?, ?, ?, ?)',
-        [adminId, 'Super Admin', targetEmail, hashedPassword, 'SUPER_ADMIN', deptId]
-      );
-      console.log(`✅ Super Admin created: ${targetEmail}`);
-    } else {
-      console.log(`ℹ️ Super Admin already exists: ${targetEmail}`);
-    }
-
-    db.release();
-
   } catch (error: any) {
     if (error.code === 'ER_ACCESS_DENIED_ERROR') {
       console.error('\n❌ CRITICAL ERROR: Access Denied to MySQL Database.');

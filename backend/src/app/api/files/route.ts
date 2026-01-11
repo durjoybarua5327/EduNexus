@@ -13,7 +13,6 @@ export async function GET(req: Request) {
     const courseId = searchParams.get("courseId");
 
     try {
-        // Auto-resolve Course Root: If viewing a course root, retrieve its contents instead of the folder itself
         if (courseId && !parentId) {
             const [courseRoots] = await pool.query<any[]>("SELECT id FROM Folder WHERE courseId = ? AND parentId IS NULL LIMIT 1", [courseId]);
             if (courseRoots.length > 0) {
@@ -21,72 +20,39 @@ export async function GET(req: Request) {
             }
         }
 
-        let folderQuery = "SELECT * FROM Folder WHERE parentId ";
-        let fileQuery = "SELECT * FROM File WHERE folderId ";
-        const params: any[] = [];
 
-        // Handle Parent ID (Root or Specific Folder)
-        if (parentId) {
-            folderQuery += "= ?";
-            fileQuery += "= ?";
-            params.push(parentId);
-        } else {
-            folderQuery += "IS NULL";
-            fileQuery += "IS NULL";
+        const userRole = (session.user as any).role;
+        const userId = session.user.id;
+
+        let folderWhereConditions = ["parentId " + (parentId ? "= ?" : "IS NULL")];
+        let folderQueryParams = parentId ? [parentId] : [];
+
+        let fileWhereConditions = ["folderId " + (parentId ? "= ?" : "IS NULL")];
+        let fileQueryParams = parentId ? [parentId] : [];
+
+        if (userRole === "STUDENT" || userRole === "CR") {
+            folderWhereConditions.push("(isPublic = 1 OR isSystem = 1 OR ownerId = ?)");
+            folderQueryParams.push(userId);
+
+            fileWhereConditions.push("(isPublic = 1 OR uploadedBy = ?)");
+            fileQueryParams.push(userId);
         }
-
-        // Handle Filters (Mutually Exclusive ideally, or combined)
-        if (ownerId) {
-            folderQuery += " AND ownerId = ?";
-            // Files don't strictly assume owner match if they are in the folder, 
-            // but we might want to filter? Usually files inherit folder access.
-            // For now, let's assume we filter Folders by owner. 
-            // Files are fetched by folderId, so if we are in root, we shouldn't see loose files unless they are queryable?
-            // The existing logic fetches files in the *current* folder (parentId).
-            // So filtering by ownerId mainly applies to the *Folders* we see in Root.
-            if (!parentId) {
-                // Only filter root folders by owner if explicitly asked
-                params.push(ownerId);
-            } else {
-                // Inner folders/files are visible if parent is visible? 
-                // Removing the extra param push if we don't append logic 
-                // Correction: We must append the condition if we add the param
-                // But wait, the previous code structure is rigid.
-                // Let's rewrite query construction.
-            }
-        }
-
-        // REWRITE Query Construction for better flexibility
-        let whereConditions = ["parentId " + (parentId ? "= ?" : "IS NULL")];
-        let queryParams = parentId ? [parentId] : [];
 
         if (ownerId && !parentId) {
-            whereConditions.push("ownerId = ?");
-            queryParams.push(ownerId);
+            folderWhereConditions.push("ownerId = ?");
+            folderQueryParams.push(ownerId);
 
-            // SYNC LOGIC: If we are fetching root folders for a user, check/sync system folders
-            // Only do this if filtering by owner (which is the case for "My Files")
-            // This ensures automatic folder creation upon visiting
             try {
-                const log = (msg: string) => console.log('SYNC: ' + msg);
-
-                log(`SYNC START: ownerId=${ownerId}`);
-
-                // Ensure we have User's role and profile context
                 const [users] = await pool.query<any[]>("SELECT role, departmentId FROM User WHERE id = ?", [ownerId]);
                 const user = users[0];
-                log(`SYNC: User found: ${user?.role} ${user?.departmentId}`);
 
                 if (user && (user.role === 'STUDENT' || user.role === 'CR')) {
-                    // ... existing student sync logic ...
-                    // Get Student Profile to find Batch (applicable for both STUDENT and CR)
                     const [profiles] = await pool.query<any[]>("SELECT batchId FROM StudentProfile WHERE userId = ?", [ownerId]);
                     const profile = profiles[0];
                     if (profile?.batchId) {
                         const allSemesters = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
                         for (const semesterName of allSemesters) {
                             const folderName = `${semesterName} Semester`;
-                            // 1. Check/Create Root Semester Folder
                             const [existingSemFolder] = await pool.query<any[]>(
                                 "SELECT id FROM Folder WHERE ownerId = ? AND name = ? AND parentId IS NULL",
                                 [ownerId, folderName]
@@ -101,7 +67,6 @@ export async function GET(req: Request) {
                                 );
                             }
 
-                            // 2. Sync Course Folders
                             const [semester] = await pool.query<any[]>(
                                 "SELECT id FROM Semester WHERE departmentId = ? AND name = ?",
                                 [user.departmentId, semesterName]
@@ -136,7 +101,6 @@ export async function GET(req: Request) {
                         "SELECT id, name, code FROM Course WHERE teacherId = ?",
                         [ownerId]
                     );
-                    log(`SYNC: Teacher has ${courses.length} courses`);
 
                     for (const course of courses) {
                         const displayName = course.code ? `${course.code} - ${course.name}` : course.name;
@@ -151,53 +115,56 @@ export async function GET(req: Request) {
                             const folderId = 'folder-sys-' + course.id + '-' + ownerId + '-' + Date.now();
                             await pool.query(
                                 "INSERT INTO Folder (id, name, parentId, ownerId, isPublic, isSystem, courseId) VALUES (?, ?, NULL, ?, ?, ?, ?)",
-                                [folderId, displayName, ownerId, false, true, course.id]
+                                [folderId, displayName, ownerId, true, true, course.id]
                             );
-                            log(`SYNC: Created Teacher Root Folder: ${displayName}`);
                         }
                     }
                 }
             } catch (syncError: any) {
                 console.error("Auto-sync folder error:", syncError);
-                // Non-blocking error, continue fetching existing folders
             }
         }
 
         if (courseId && !parentId) {
-            whereConditions.push("courseId = ?");
-            queryParams.push(courseId);
+            folderWhereConditions.push("courseId = ?");
+            folderQueryParams.push(courseId);
         }
 
-        const whereClause = " WHERE " + whereConditions.join(" AND ");
+        const folderWhereClause = folderWhereConditions.length > 0 ? " WHERE " + folderWhereConditions.join(" AND ") : "";
+        const fileWhereClause = fileWhereConditions.length > 0 ? " WHERE " + fileWhereConditions.join(" AND ") : "";
 
-        folderQuery = "SELECT * FROM Folder" + whereClause + " ORDER BY createdAt DESC";
-        fileQuery = "SELECT * FROM File WHERE folderId " + (parentId ? "= ?" : "IS NULL") + " ORDER BY createdAt DESC";
+        const folderQuery = "SELECT * FROM Folder" + folderWhereClause + " ORDER BY CASE WHEN isSystem = 1 AND name LIKE '%Semester' THEN 0 ELSE 1 END, name ASC, createdAt DESC";
+        const fileQuery = "SELECT * FROM File" + fileWhereClause + " ORDER BY createdAt DESC";
 
-        // Files query needs its own params (just parentId)
-        const fileParams = parentId ? [parentId] : [];
-
-        const [folders] = await pool.query(folderQuery, queryParams);
-        const [files] = await pool.query(fileQuery, fileParams);
+        const [folders] = await pool.query(folderQuery, folderQueryParams);
+        const [files] = await pool.query(fileQuery, fileQueryParams);
 
         // Add item counts to each folder (files + subfolders)
         const foldersWithCounts = await Promise.all(
             (folders as any[]).map(async (folder) => {
-                // Count files in this folder
-                const [fileCountResult] = await pool.query<any[]>(
-                    "SELECT COUNT(*) as count FROM File WHERE folderId = ?",
-                    [folder.id]
-                );
+                // Count files in this folder (respecting privacy)
+                let fCountQuery = "SELECT COUNT(*) as count FROM File WHERE folderId = ?";
+                let fCountParams = [folder.id];
+                if (userRole === "STUDENT" || userRole === "CR") {
+                    fCountQuery += " AND (isPublic = 1 OR uploadedBy = ?)";
+                    fCountParams.push(userId);
+                }
+                const [fileCountResult] = await pool.query<any[]>(fCountQuery, fCountParams);
                 const fileCount = fileCountResult[0]?.count || 0;
 
-                // Count subfolders in this folder
-                const [subfolderCountResult] = await pool.query<any[]>(
-                    "SELECT COUNT(*) as count FROM Folder WHERE parentId = ?",
-                    [folder.id]
-                );
+                // Count subfolders in this folder (respecting privacy)
+                let sfCountQuery = "SELECT COUNT(*) as count FROM Folder WHERE parentId = ?";
+                let sfCountParams = [folder.id];
+                if (userRole === "STUDENT" || userRole === "CR") {
+                    sfCountQuery += " AND (isPublic = 1 OR ownerId = ?)";
+                    sfCountParams.push(userId);
+                }
+                const [subfolderCountResult] = await pool.query<any[]>(sfCountQuery, sfCountParams);
                 const subfolderCount = subfolderCountResult[0]?.count || 0;
 
                 return {
                     ...folder,
+                    isPublic: folder.isSystem ? true : !!folder.isPublic,
                     _count: {
                         files: fileCount,
                         subfolders: subfolderCount,
@@ -226,7 +193,11 @@ export async function GET(req: Request) {
             }
         }
 
-        return NextResponse.json({ folders: foldersWithCounts, files, breadcrumbs });
+        return NextResponse.json({
+            folders: foldersWithCounts,
+            files: (files as any[]).map(f => ({ ...f, isPublic: !!f.isPublic })),
+            breadcrumbs
+        });
     } catch (e) {
         console.error(e);
         return NextResponse.json({ error: "Database error" }, { status: 500 });
@@ -247,19 +218,16 @@ export async function POST(req: Request) {
             const pid = parentId === "root" ? null : parentId;
             await pool.query(
                 "INSERT INTO Folder (id, name, parentId, ownerId, isPublic, courseId) VALUES (?, ?, ?, ?, ?, ?)",
-                [id, name, pid, userId, isPublic || false, courseId || null]
+                [id, name, pid, userId, !!isPublic, courseId || null]
             );
             return NextResponse.json({ success: true, id });
         } else if (type === "file") {
             const id = 'file-' + Date.now();
-            console.log(`INSERTING FILE: id=${id}, name=${name}, size=${size}, url=${url}`);
-
-            // Fallback for null/undefined size
             const finalSize = size || 0;
 
             await pool.query(
-                "INSERT INTO File (id, name, url, folderId, size, type, uploadedBy) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                [id, name, url, folderId, finalSize, "unknown", userId]
+                "INSERT INTO File (id, name, url, folderId, size, type, uploadedBy, isPublic) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [id, name, url, folderId, finalSize, "unknown", userId, !!isPublic]
             );
             return NextResponse.json({ success: true, id });
         }
@@ -279,36 +247,26 @@ export async function DELETE(req: Request) {
     if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
 
     try {
-        console.log(`DELETE request for ID: ${id}`);
-        // Check ownership and system status
         const [rows] = await pool.query<any[]>("SELECT ownerId, isSystem FROM Folder WHERE id = ?", [id]);
         const folder = rows[0];
 
         if (!folder) {
-            console.log(`Item ${id} is not a folder. Checking if file...`);
-            // Check if it's a file?
             const [fileRows] = await pool.query<any[]>("SELECT uploadedBy FROM File WHERE id = ?", [id]);
             const file = fileRows[0];
             if (!file) {
-                console.log(`Item ${id} not found in Folder or File tables.`);
                 return NextResponse.json({ error: "Not found" }, { status: 404 });
             }
             if (file.uploadedBy !== session.user.id) {
-                console.log(`Unauthorized File Delete: User ${session.user.id} tried to delete file owned by ${file.uploadedBy}`);
                 return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
             }
-
             await pool.query("DELETE FROM File WHERE id = ?", [id]);
-            console.log(`File ${id} deleted successfully.`);
             return NextResponse.json({ success: true });
         }
 
-        console.log(`Folder found: ${id}, owner: ${folder.ownerId}, isSystem: ${folder.isSystem}`);
         if (folder.ownerId !== session.user.id) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         if (folder.isSystem) return NextResponse.json({ error: "System folders cannot be deleted" }, { status: 403 });
 
         await pool.query("DELETE FROM Folder WHERE id = ?", [id]);
-        console.log(`Folder ${id} deleted successfully.`);
         return NextResponse.json({ success: true });
     } catch (e) {
         console.error("DELETE Error:", e);
@@ -336,20 +294,14 @@ export async function PATCH(req: Request) {
             if (folder) {
                 await pool.query("UPDATE Folder SET name = ? WHERE id = ?", [name, id]);
             } else {
-                // Try updating File
-                console.log(`PATCH: Checking if ID ${id} is a file...`);
                 const [fileRows] = await pool.query<any[]>("SELECT uploadedBy FROM File WHERE id = ?", [id]);
                 const file = fileRows[0];
                 if (file) {
-                    console.log(`PATCH: File found. Owner: ${file.uploadedBy}, Current User: ${session.user.id}`);
                     if (file.uploadedBy !== session.user.id) {
-                        console.error("PATCH: Unauthorized file update attempt");
                         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
                     }
                     await pool.query("UPDATE File SET name = ? WHERE id = ?", [name, id]);
-                    console.log(`PATCH: File ${id} renamed to ${name}`);
                 } else {
-                    console.error(`PATCH: Item ${id} not found as Folder or File`);
                     return NextResponse.json({ error: "Item not found" }, { status: 404 });
                 }
             }
@@ -359,7 +311,6 @@ export async function PATCH(req: Request) {
             if (folder) {
                 await pool.query("UPDATE Folder SET isPublic = ? WHERE id = ?", [isPublic, id]);
             } else {
-                // Check if file
                 const [fileRows] = await pool.query<any[]>("SELECT uploadedBy FROM File WHERE id = ?", [id]);
                 const file = fileRows[0];
                 if (file) {

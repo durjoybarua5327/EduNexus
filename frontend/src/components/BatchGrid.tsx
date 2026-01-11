@@ -28,15 +28,7 @@ export function BatchGrid({ students, currentUserRole, currentUserId, currentUse
     const isCR = currentUserRole === 'CR';
     const isTopCR = isCR && currentUserIsTopCR;
 
-    // DEBUG: Log component props
-    console.log('=== BatchGrid Debug ===', {
-        currentUserRole,
-        currentUserId,
-        currentUserIsTopCR,
-        isCR,
-        isTopCR,
-        studentsCount: students?.length
-    });
+
 
     const handleDelete = async (studentId: string) => {
         setIsDeleting(true);
@@ -137,15 +129,7 @@ export function BatchGrid({ students, currentUserRole, currentUserId, currentUse
                     const isStudentCR = student.role === 'CR';
                     const isLoadingAction = actionLoading === student.id;
 
-                    // DEBUG: Log button visibility conditions
-                    if (isStudentCR && !student.isTopCR) {
-                        console.log('Regular CR Found:', {
-                            name: student.name,
-                            studentIsTopCR: student.isTopCR,
-                            currentUserIsTopCR: isTopCR,
-                            shouldShowButtons: isTopCR && !isTeacher && student.id !== currentUserId
-                        });
-                    }
+
 
                     return (
                         <motion.div

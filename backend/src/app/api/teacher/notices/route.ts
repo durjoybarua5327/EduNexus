@@ -15,12 +15,14 @@ export async function GET(req: Request) {
         const [notices] = await pool.query<any[]>(
             `SELECT n.*, GROUP_CONCAT(t.name) as tags, 
                     'Class Notice' as type,
-                   (SELECT name FROM Batch WHERE id = n.batchId) as batchName
+                   (SELECT name FROM Batch WHERE id = n.batchId) as batchName,
+                   c.name as courseName, c.code as courseCode
              FROM ClassNotice n
              LEFT JOIN ClassNoticeTag nt ON n.id = nt.noticeId
              LEFT JOIN Tag t ON nt.tagId = t.id
+             LEFT JOIN Course c ON n.courseId = c.id
              WHERE n.authorId = ?
-             GROUP BY n.id
+             GROUP BY n.id, c.id
              ORDER BY n.createdAt DESC`,
             [teacherId]
         );
